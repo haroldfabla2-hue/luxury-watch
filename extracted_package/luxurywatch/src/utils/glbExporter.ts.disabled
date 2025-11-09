@@ -1,0 +1,194 @@
+// Singleton Pattern para evitar múltiples instancias de Three.js
+import { THREE } from '../lib/three-singleton'
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js'
+
+/**
+ * Utilidad para exportar escenas Three.js a formato GLB para AR
+ */
+
+interface ExportOptions {
+  binary?: boolean
+  maxTextureSize?: number
+  includeCustomExtensions?: boolean
+}
+
+/**
+ * Exporta una escena Three.js o un objeto 3D a formato GLB
+ * @param scene - Escena o grupo de Three.js a exportar
+ * @param filename - Nombre del archivo (sin extensión)
+ * @param options - Opciones de exportación
+ * @returns Promise con el Blob del archivo GLB
+ */
+export const exportToGLB = async (
+  scene: THREE.Scene | THREE.Group,
+  filename: string = 'watch-model',
+  options: ExportOptions = {}
+): Promise<Blob> => {
+  return new Promise((resolve, reject) => {
+    const exporter = new GLTFExporter()
+
+    const exportOptions = {
+      binary: true, // GLB format (binary)
+      maxTextureSize: options.maxTextureSize || 2048,
+      includeCustomExtensions: options.includeCustomExtensions || false,
+      onlyVisible: true,
+      truncateDrawRange: false,
+      embedImages: true
+    }
+
+    exporter.parse(
+      scene,
+      (result) => {
+        if (result instanceof ArrayBuffer) {
+          const blob = new Blob([result], { type: 'model/gltf-binary' })
+          resolve(blob)
+        } else {
+          // GLTF format (JSON)
+          const output = JSON.stringify(result, null, 2)
+          const blob = new Blob([output], { type: 'application/json' })
+          resolve(blob)
+        }
+      },
+      (error) => {
+        console.error('Error al exportar modelo:', error)
+        reject(error)
+      },
+      exportOptions
+    )
+  })
+}
+
+/**
+ * Descarga el archivo GLB generado
+ * @param blob - Blob del archivo GLB
+ * @param filename - Nombre del archivo
+ */
+export const downloadGLB = (blob: Blob, filename: string = 'watch-model') => {
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}.glb`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Crea una URL temporal del Blob para usar en model-viewer
+ * @param blob - Blob del archivo GLB
+ * @returns URL del objeto
+ */
+export const createModelURL = (blob: Blob): string => {
+  return URL.createObjectURL(blob)
+}
+
+/**
+ * Libera la URL del objeto creada
+ * @param url - URL del objeto a liberar
+ */
+export const revokeModelURL = (url: string) => {
+  URL.revokeObjectURL(url)
+}
+
+/**
+ * Prepara un modelo Three.js para exportación AR optimizada
+ * - Simplifica geometrías si es necesario
+ * - Optimiza materiales
+ * - Ajusta escala para AR
+ * @param model - Modelo Three.js
+ * @returns Modelo optimizado
+ */
+export const prepareModelForAR = (model: THREE.Group): THREE.Group => {
+  const clonedModel = model.clone()
+
+  // Escala apropiada para AR (relojes son pequeños en la realidad)
+  // 1 unidad Three.js = 1 metro en AR, un reloj de 40mm = 0.04m
+  const watchSize = 0.04 // 40mm en metros
+  clonedModel.scale.multiplyScalar(watchSize)
+
+  // Centrar el modelo en el origen
+  const box = new THREE.Box3().setFromObject(clonedModel)
+  const center = box.getCenter(new THREE.Vector3())
+  clonedModel.position.sub(center)
+
+  // Optimizar materiales para AR
+  clonedModel.traverse((child) => {
+    if (child instanceof THREE.Mesh) {
+      const material = child.material as THREE.MeshStandardMaterial | THREE.MeshPhysicalMaterial
+
+      if (material) {
+        // Asegurar que los materiales sean compatibles con GLTF
+        if (material.map) {
+          material.map.flipY = false
+        }
+
+        // Limitar el brillo excesivo para AR
+        if ('metalness' in material && material.metalness > 0.9) {
+          material.metalness = 0.9
+        }
+
+        // Ajustar roughness para mejor visualización en AR
+        if ('roughness' in material && material.roughness < 0.1) {
+          material.roughness = 0.1
+        }
+
+        // Asegurar que el material tenga side correcto
+        material.side = THREE.FrontSide
+        material.needsUpdate = true
+      }
+
+      // Asegurar que las geometrías tengan normales calculadas
+      if (child.geometry) {
+        if (!child.geometry.attributes.normal) {
+          child.geometry.computeVertexNormals()
+        }
+      }
+    }
+  })
+
+  return clonedModel
+}
+
+/**
+ * Exporta y prepara el modelo para AR en un solo paso
+ * @param scene - Escena o grupo de Three.js
+ * @param filename - Nombre del archivo
+ * @returns Promise con la URL del modelo y función de limpieza
+ */
+export const exportForAR = async (
+  scene: THREE.Scene | THREE.Group,
+  filename: string = 'watch-model'
+): Promise<{ url: string; cleanup: () => void }> => {
+  try {
+    // Preparar modelo optimizado para AR
+    const preparedModel = prepareModelForAR(scene as THREE.Group)
+
+    // Exportar a GLB
+    const blob = await exportToGLB(preparedModel, filename, {
+      binary: true,
+      maxTextureSize: 2048
+    })
+
+    // Crear URL temporal
+    const url = createModelURL(blob)
+
+    // Retornar URL y función de limpieza
+    return {
+      url,
+      cleanup: () => revokeModelURL(url)
+    }
+  } catch (error) {
+    console.error('Error al exportar para AR:', error)
+    throw error
+  }
+}
+
+export default {
+  exportToGLB,
+  downloadGLB,
+  createModelURL,
+  revokeModelURL,
+  prepareModelForAR,
+  exportForAR
+}

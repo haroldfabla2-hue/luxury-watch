@@ -1,0 +1,83 @@
+{
+  "optimization": {
+    "enable_draco": true,
+    "draco_compression_level": 6,
+    "enable_texture_compression": true,
+    "texture_format": "ktx2",
+    "basis_quality": "balanced",
+    "remove_extras": true,
+    "remove_metadata": true,
+    "simplify_geometries": true,
+    "geometry_precision": 14,
+    "normal_precision": 10,
+    "texcoord_precision": 12
+  },
+  "lod_generation": {
+    "enabled": true,
+    "levels": 4,
+    "distance_based": true,
+    "quality_threshold": 0.1,
+    "aggressive_mode": false
+  },
+  "device_profiles": {
+    "mobile": {
+      "max_texture_size": 1024,
+      "texture_quality": 0.6,
+      "geometry_simplification": 0.8,
+      "draco_compression_level": 7,
+      "generate_lods": true,
+      "lod_distance_divisor": 1.0,
+      "target_fps": 30,
+      "memory_limit_mb": 512
+    },
+    "tablet": {
+      "max_texture_size": 2048,
+      "texture_quality": 0.8,
+      "geometry_simplification": 0.6,
+      "draco_compression_level": 6,
+      "generate_lods": true,
+      "lod_distance_divisor": 1.5,
+      "target_fps": 45,
+      "memory_limit_mb": 1024
+    },
+    "desktop": {
+      "max_texture_size": 4096,
+      "texture_quality": 1.0,
+      "geometry_simplification": 0.3,
+      "draco_compression_level": 5,
+      "generate_lods": false,
+      "lod_distance_divisor": 2.0,
+      "target_fps": 60,
+      "memory_limit_mb": 2048
+    }
+  },
+  "output": {
+    "format": "gltf+bin",
+    "embed_textures": false,
+    "separate_textures": true,
+    "create_materials": true,
+    "minify": true,
+    "sort_by": "name"
+  },
+  "validation": {
+    "validate_output": true,
+    "check_mesh_integrity": true,
+    "verify_textures": true,
+    "test_loading": false
+  },
+  "performance": {
+    "parallel_processing": true,
+    "max_workers": 4,
+    "batch_size": 10,
+    "memory_limit_gb": 8,
+    "cache_enabled": true,
+    "cache_size_mb": 512
+  },
+  "reporting": {
+    "generate_html_report": true,
+    "generate_json_report": true,
+    "include_comparison": true,
+    "save_intermediate": false,
+    "verbose_logging": false
+  }
+}

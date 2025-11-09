@@ -1,0 +1,344 @@
+{
+  "agente_info": {
+    "nombre": "Selector de Técnica 2D-3D",
+    "version": "1.0.0",
+    "descripcion": "Agente inteligente que selecciona automáticamente entre COLMAP local, OpenRouter API, o método híbrido basado en evaluación de factores",
+    "autor": "Sistema de Agentes IA",
+    "fecha_creacion": "2025-11-06"
+  },
+  
+  "configuracion_agente": {
+    "max_concurrencia": 3,
+    "timeout_default": 300,
+    "timeout_colmap": 600,
+    "timeout_openrouter": 300,
+    "timeout_hibrido": 450,
+    "reintentos_fallback": 2,
+    "intervalo_monitoreo": 60
+  },
+  
+  "metodos_procesamiento": {
+    "colmap_local": {
+      "nombre": "COLMAP Local",
+      "descripcion": "Procesamiento local gratuito usando COLMAP",
+      "costo_por_imagen": 0.0,
+      "tiempo_por_imagen": 180.0,
+      "calidad_base": 0.85,
+      "recursos_cpu": 0.8,
+      "recursos_ram": 0.6,
+      "recursos_disco": 200.0,
+      "confiabilidad": 0.9,
+      "disponible": true,
+      "peso_evaluacion": {
+        "costo": 0.0,
+        "tiempo": 0.3,
+        "calidad": 0.35,
+        "recursos_locales": 0.35
+      },
+      "condiciones_optimales": {
+        "num_imagenes_max": 100,
+        "calidad_imagenes_min": 0.6,
+        "recursos_cpu_min": 0.7,
+        "recursos_ram_min": 0.5,
+        "complejidad_max": 0.8
+      },
+      "configuracion": {
+        "feature_extraction": {
+          "max_keypoints": 8192,
+          "quality": "HIGH"
+        },
+        "matching": {
+          "cross_check": true,
+          "ratio_test": 0.8
+        },
+        "triangulation": {
+          "min_track_length": 2,
+          "max_reprojection_error": 4.0
+        },
+        "bundle_adjustment": {
+          "max_num_iterations": 100,
+          "loss_function": "CAUCHY"
+        }
+      }
+    },
+    
+    "openrouter_api": {
+      "nombre": "OpenRouter API",
+      "descripcion": "Procesamiento premium usando APIs de OpenRouter",
+      "costo_por_imagen": 0.15,
+      "tiempo_por_imagen": 90.0,
+      "calidad_base": 0.95,
+      "recursos_cpu": 0.1,
+      "recursos_ram": 0.1,
+      "recursos_disco": 50.0,
+      "confiabilidad": 0.85,
+      "disponible": true,
+      "peso_evaluacion": {
+        "costo": 0.25,
+        "tiempo": 0.4,
+        "calidad": 0.35,
+        "recursos_locales": 0.0
+      },
+      "condiciones_optimales": {
+        "num_imagenes_max": 200,
+        "calidad_imagenes_min": 0.7,
+        "presupuesto_min": 10.0,
+        "deadline_presente": true,
+        "calidad_premium_requerida": true
+      },
+      "configuracion": {
+        "modelo": "advanced_3d_reconstruction",
+        "parametros": {
+          "resolution": "HIGH",
+          "detail_level": "PREMIUM",
+          "texture_quality": "4K",
+          "geometry_precision": "HIGH"
+        },
+        "limitaciones": {
+          "max_imagenes_por_request": 50,
+          "max_tamano_imagen": "10MB",
+          "timeout_request": 120
+        }
+      }
+    },
+    
+    "hibrido": {
+      "nombre": "Procesamiento Híbrido",
+      "descripcion": "Combinación optimizada de procesamiento local y API",
+      "costo_por_imagen": 0.05,
+      "tiempo_por_imagen": 120.0,
+      "calidad_base": 0.92,
+      "recursos_cpu": 0.5,
+      "recursos_ram": 0.4,
+      "recursos_disco": 125.0,
+      "confiabilidad": 0.88,
+      "disponible": true,
+      "peso_evaluacion": {
+        "costo": 0.15,
+        "tiempo": 0.35,
+        "calidad": 0.35,
+        "recursos_locales": 0.15
+      },
+      "condiciones_optimales": {
+        "num_imagenes_medio": true,
+        "calidad_imagenes_min": 0.65,
+        "recursos_suficientes": true,
+        "presupuesto_limitado": true
+      },
+      "configuracion": {
+        "fase1": {
+          "metodo": "colmap_local",
+          "porcentaje_imagenes": 0.7,
+          "descripcion": "Procesamiento inicial con COLMAP"
+        },
+        "fase2": {
+          "metodo": "openrouter_api",
+          "porcentaje_imagenes": 0.3,
+          "descripcion": "Refinamiento con API premium"
+        },
+        "fusion": {
+          "algoritmo": "weighted_average",
+          "pesos": {
+            "colmap": 0.6,
+            "openrouter": 0.4
+          }
+        }
+      }
+    }
+  },
+  
+  "evaluacion_factores": {
+    "pesos_factores": {
+      "num_imagenes": 0.25,
+      "calidad_imagenes": 0.30,
+      "complejidad_objeto": 0.20,
+      "recursos_servidor": 0.15,
+      "tiempo_requerido": 0.10
+    },
+    "escalas_evaluacion": {
+      "num_imagenes": {
+        "pocas": {"min": 1, "max": 10, "score": 0.8},
+        "moderadas": {"min": 11, "max": 50, "score": 1.0},
+        "muchas": {"min": 51, "max": 100, "score": 0.7},
+        "excesivas": {"min": 101, "max": 999, "score": 0.4}
+      },
+      "calidad_imagenes": {
+        "baja": {"min": 0.0, "max": 0.5, "impacto": "negativo"},
+        "media": {"min": 0.5, "max": 0.8, "impacto": "neutral"},
+        "alta": {"min": 0.8, "max": 1.0, "impacto": "positivo"}
+      },
+      "complejidad_objeto": {
+        "simple": {"min": 0.0, "max": 0.3, "metodo_preferido": "colmap_local"},
+        "moderada": {"min": 0.3, "max": 0.7, "metodo_preferido": "hibrido"},
+        "compleja": {"min": 0.7, "max": 1.0, "metodo_preferido": "openrouter_api"}
+      }
+    }
+  },
+  
+  "monitoreo_recursos": {
+    "servidor_optimizado": {
+      "vcpus": 4,
+      "ram_gb": 8,
+      "disco_gb": 100,
+      "conexion_internet": "stable"
+    },
+    "umbrales_alerta": {
+      "cpu": {
+        "advertencia": 70.0,
+        "critico": 85.0,
+        "accion_automatica": 90.0
+      },
+      "ram": {
+        "advertencia": 75.0,
+        "critico": 85.0,
+        "accion_automatica": 90.0
+      },
+      "disco": {
+        "advertencia": 80.0,
+        "critico": 90.0,
+        "accion_automatica": 95.0
+      }
+    },
+    "metricas_monitoreadas": {
+      "cpu_uso": {"unidad": "%", "frecuencia": 10},
+      "ram_uso": {"unidad": "%", "frecuencia": 10},
+      "disco_uso": {"unidad": "%", "frecuencia": 30},
+      "tiempo_respuesta": {"unidad": "ms", "frecuencia": 5},
+      "throughput": {"unidad": "imagenes/min", "frecuencia": 60}
+    }
+  },
+  
+  "fallback_automatico": {
+    "estrategias": {
+      "colmap_local": {
+        "primario": "colmap_local",
+        "fallback_1": "hibrido",
+        "fallback_2": "openrouter_api"
+      },
+      "openrouter_api": {
+        "primario": "openrouter_api",
+        "fallback_1": "hibrido",
+        "fallback_2": "colmap_local"
+      },
+      "hibrido": {
+        "primario": "hibrido",
+        "fallback_1": "colmap_local",
+        "fallback_2": "openrouter_api"
+      }
+    },
+    "condiciones_fallback": {
+      "timeout": true,
+      "error_critico": true,
+      "recursos_insuficientes": true,
+      "calidad_insuficiente": true,
+      "costo_excedido": true
+    },
+    "configuracion_reintentos": {
+      "max_reintentos": 2,
+      "delay_reintento": 5.0,
+      "exponential_backoff": true
+    }
+  },
+  
+  "logging_decisiones": {
+    "nivel_detalle": "INFO",
+    "archivo_log": "logs/selector_tecnica_decisions.log",
+    "rotacion": {
+      "max_tamano": "10MB",
+      "max_archivos": 5
+    },
+    "informacion_registrada": {
+      "factores_evaluacion": true,
+      "decision_tomada": true,
+      "razones_decision": true,
+      "recursos_estimados": true,
+      "tiempo_real": true,
+      "calidad_resultado": true,
+      "costo_real": true
+    },
+    "metricas_agregadas": {
+      "precision_decisiones": true,
+      "tiempo_promedio_procesamiento": true,
+      "tasa_exito_metodos": true,
+      "uso_recursos_promedio": true
+    }
+  },
+  
+  "optimizacion_servidor": {
+    "limitaciones_sistema": {
+      "vcpus_disponibles": 4,
+      "ram_maxima_gb": 8,
+      "almacenamiento_gb": 100,
+      "conexion_red_mbps": 100
+    },
+    "configuracion_procesamiento": {
+      "max_tareas_concurrentes": 3,
+      "batch_size_recomendado": 10,
+      "pool_workers": 2,
+      "cache_resultados": true,
+      "preload_modelos": false
+    },
+    "optimizaciones_memoria": {
+      "lazy_loading": true,
+      "garbage_collection": "aggressive",
+      "cache_lru_size": 1000,
+      "streaming_large_files": true
+    },
+    "configuracion_io": {
+      "temp_dir": "/tmp/selector_tecnica",
+      "output_dir": "output/3d_models",
+      "cache_dir": "cache/selector_tecnica",
+      "cleanup_temp": true
+    }
+  },
+  
+  "apis_integracion": {
+    "openrouter": {
+      "base_url": "https://openrouter.ai/api/v1",
+      "timeout": 300,
+      "rate_limit": {
+        "requests_per_minute": 60,
+        "requests_per_hour": 1000
+      },
+      "autenticacion": {
+        "tipo": "API_KEY",
+        "variable_entorno": "OPENROUTER_API_KEY"
+      }
+    },
+    "colmap": {
+      "instalacion_requerida": true,
+      "version_minima": "3.8",
+      "parametros_default": {
+        "SiftExtraction.max_num_keypoints": 8192,
+        "SiftExtraction.peak_threshold": 0.04,
+        "SiftExtraction.edge_threshold": 10.0,
+        "SiftMatching.max_ratio": 0.8,
+        "SiftMatching.cross_check": true
+      }
+    }
+  },
+  
+  "metodos_evaluacion": {
+    "calidad_imagenes": {
+      "resolucion_minima": {
+        "ancho": 800,
+        "alto": 600
+      },
+      "formatos_soportados": ["JPEG", "PNG", "TIFF", "BMP"],
+      "criterios_calidad": {
+        "nitidez": 0.8,
+        "exposicion": 0.7,
+        "ruido_maximo": 0.3,
+        "distorsion_maxima": 0.2
+      }
+    },
+    "complejidad_objetos": {
+      "metricas": {
+        "num_puntos": {"peso": 0.3, "maximo": 50000},
+        "num_triangulos": {"peso": 0.3, "maximo": 100000},
+        "materiales_multiples": {"peso": 0.2, "maximo": 10},
+        "animaciones": {"peso": 0.2, "maximo": 5}
+      }
+    }
+  }
+}

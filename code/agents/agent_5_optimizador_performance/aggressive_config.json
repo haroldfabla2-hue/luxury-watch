@@ -1,0 +1,84 @@
+{
+  "name": "aggressive_optimization",
+  "description": "Optimización agresiva para modelos complejos",
+  "optimization": {
+    "enable_draco": true,
+    "draco_compression_level": 8,
+    "enable_texture_compression": true,
+    "texture_format": "ktx2",
+    "basis_quality": "smallest",
+    "remove_extras": true,
+    "remove_metadata": true,
+    "simplify_geometries": true,
+    "geometry_precision": 12,
+    "normal_precision": 8,
+    "texcoord_precision": 10
+  },
+  "lod_generation": {
+    "enabled": true,
+    "levels": 6,
+    "distance_based": true,
+    "quality_threshold": 0.15
+  },
+  "device_profiles": {
+    "mobile": {
+      "max_texture_size": 512,
+      "texture_quality": 0.4,
+      "geometry_simplification": 0.9,
+      "draco_compression_level": 8,
+      "generate_lods": true,
+      "lod_distance_divisor": 0.8,
+      "target_fps": 30,
+      "memory_limit_mb": 256
+    },
+    "tablet": {
+      "max_texture_size": 1024,
+      "texture_quality": 0.6,
+      "geometry_simplification": 0.8,
+      "draco_compression_level": 7,
+      "generate_lods": true,
+      "lod_distance_divisor": 1.2,
+      "target_fps": 45,
+      "memory_limit_mb": 512
+    },
+    "desktop": {
+      "max_texture_size": 2048,
+      "texture_quality": 0.8,
+      "geometry_simplification": 0.6,
+      "draco_compression_level": 6,
+      "generate_lods": true,
+      "lod_distance_divisor": 1.5,
+      "target_fps": 60,
+      "memory_limit_mb": 1024
+    }
+  },
+  "output": {
+    "format": "gltf+bin",
+    "embed_textures": false,
+    "separate_textures": true,
+    "create_materials": true,
+    "minify": true,
+    "sort_by": "name"
+  },
+  "validation": {
+    "validate_output": true,
+    "check_mesh_integrity": true,
+    "verify_textures": true,
+    "test_loading": true
+  },
+  "performance": {
+    "parallel_processing": true,
+    "max_workers": 8,
+    "batch_size": 20,
+    "memory_limit_gb": 16,
+    "cache_enabled": true,
+    "cache_size_mb": 1024
+  },
+  "reporting": {
+    "generate_html_report": true,
+    "generate_json_report": true,
+    "include_comparison": true,
+    "save_intermediate": true,
+    "verbose_logging": true
+  }
+}

@@ -1,0 +1,40 @@
+# Dependencias del Agente 1: Analista de Calidad de Imágenes
+
+# Core dependencies
+opencv-python==4.8.1.78
+numpy==1.24.3
+pillow==10.0.1
+
+# Web framework
+fastapi==0.103.1
+uvicorn[standard]==0.23.2
+python-multipart==0.0.6
+
+# HTTP client para URLs
+aiohttp==3.8.5
+
+# Logging y utilidades
+loguru==0.7.2
+pydantic==2.3.0
+
+# Optional: Para integración con sistema de colas (si está disponible)
+# asyncio-mqtt==0.13.0
+# redis==4.6.0
+
+# Development dependencies
+pytest==7.4.2
+pytest-asyncio==0.21.1
+black==23.7.0
+flake8==6.0.0
+
+# Para análisis avanzado (opcional)
+# scikit-image==0.21.0
+# matplotlib==3.7.2
+# seaborn==0.12.2
+
+# Para procesamiento de metadatos EXIF
+# piexif==1.1.3
+
+# Para análisis de color
+# colorspacious==1.1.2
+# colormath==3.0.0

@@ -1,0 +1,282 @@
+# Archivo de configuración de ejemplo para el Agente 6: Metadatos y SEO
+# Copiar a .env y configurar con tus valores reales
+
+# === CONFIGURACIÓN DE API ===
+
+# API Key de OpenRouter para Gemini 2.0
+GEMINI_API_KEY: "sk-or-v1-tu-api-key-openrouter-aqui"
+
+# Modelo a utilizar (gemini-pro-exp recomendado)
+GEMINI_MODELO: "gemini-pro-exp"
+
+# === CONFIGURACIÓN DEL ENTORNO ===
+
+# Entorno de ejecución (development, production, testing, performance)
+AGENT_ENV: "production"
+
+# === CONFIGURACIÓN DE GEMINI ===
+
+# Parámetros de generación
+TEMPERATURA: 0.7                    # Creatividad (0.0-2.0)
+MAX_TOKENS: 2048                    # Máximo de tokens por request
+TOP_P: 0.9                          # Nucleus sampling
+TOP_K: 40                           # Top-k sampling
+
+# === CONFIGURACIÓN SEO ===
+
+# Configuración de keywords
+TARGET_KEYWORDS_DENSITY: 2.5        # Densidad objetivo de keywords (%)
+MIN_DESCRIPCION_LENGTH: 120         # Longitud mínima de descripción
+MAX_DESCRIPCION_LENGTH: 155         # Longitud máxima de descripción (SERP)
+
+# Configuración de calidad
+MIN_SEO_SCORE: 70.0                 # Score mínimo SEO (0-100)
+MIN_LEGIBILIDAD_SCORE: 60.0         # Score mínimo de legibilidad (0-100)
+
+# === CONFIGURACIÓN DE CACHE ===
+
+# Cache habilitación
+ENABLE_CACHE: true                  # Habilitar cache
+CACHE_TTL_HOURS: 24                 # TTL del cache en horas
+
+# Cache backend (redis, memory, disk)
+CACHE_BACKEND: "memory"
+
+# Redis configuration (si se usa Redis)
+REDIS_URL: "redis://localhost:6379"
+REDIS_PASSWORD: null
+REDIS_DB: 0
+
+# === CONFIGURACIÓN DE LOGGING ===
+
+# Nivel de logging (DEBUG, INFO, WARNING, ERROR)
+LOG_LEVEL: "INFO"
+
+# Logging detallado
+ENABLE_VERBOSE_LOGGING: false
+
+# Formato de logs
+LOG_FORMAT: "json"                  # json, text
+
+# Archivo de log (opcional)
+LOG_FILE: null                      # null = stdout
+
+# === CONFIGURACIÓN DE RATE LIMITING ===
+
+# Límites de requests por minuto/hora
+REQUESTS_PER_MINUTE: 60
+REQUESTS_PER_HOUR: 1000
+
+# Burst limit (requests simultáneos)
+BURST_LIMIT: 10
+
+# === CONFIGURACIÓN DE BASE DE DATOS ===
+
+# Base de datos para metadatos (opcional)
+DATABASE_URL: null                  # postgresql://user:pass@localhost/dbname
+DATABASE_POOL_SIZE: 5
+DATABASE_MAX_OVERFLOW: 10
+
+# === CONFIGURACIÓN DE ALMACENAMIENTO ===
+
+# Storage para archivos generados
+STORAGE_TYPE: "local"               # local, s3, gcs, azure
+
+# Local storage
+LOCAL_STORAGE_PATH: "./storage"
+
+# S3 configuration
+AWS_ACCESS_KEY_ID: null
+AWS_SECRET_ACCESS_KEY: null
+AWS_REGION: "us-east-1"
+S3_BUCKET_NAME: null
+
+# Google Cloud Storage
+GOOGLE_CLOUD_PROJECT: null
+GCS_BUCKET_NAME: null
+GOOGLE_APPLICATION_CREDENTIALS: null
+
+# === CONFIGURACIÓN DE MONITOREO ===
+
+# Métricas y monitoreo
+ENABLE_METRICS: true
+METRICS_PORT: 8080
+
+# Health check endpoint
+HEALTH_CHECK_PATH: "/health"
+
+# === CONFIGURACIÓN DE WEBHOOKS ===
+
+# Webhooks para notificaciones
+WEBHOOK_ENABLED: false
+WEBHOOK_URL: null
+WEBHOOK_SECRET: null
+
+# Slack integration
+SLACK_WEBHOOK_URL: null
+SLACK_CHANNEL: "#metadatos"
+
+# === CONFIGURACIÓN DE PROCESAMIENTO ===
+
+# Procesamiento en lote
+BATCH_SIZE: 10                      # Tamaño de lote para procesamiento
+MAX_CONCURRENCY: 5                  # Concurrencia máxima
+TIMEOUT_SECONDS: 300                # Timeout por request
+
+# Timeouts específicos
+GEMINI_TIMEOUT: 60                  # Timeout para Gemini API
+SEO_ANALYSIS_TIMEOUT: 30            # Timeout para análisis SEO
+
+# === CONFIGURACIÓN DE TEMPLATES ===
+
+# Templates personalizados
+CUSTOM_TEMPLATES_PATH: "./templates"
+DEFAULT_TEMPLATE_STYLE: "elegante"
+
+# Idiomas soportados
+SUPPORTED_LANGUAGES: ["es", "en", "fr", "de", "it"]
+
+# === CONFIGURACIÓN DE INTEGRACIÓN ===
+
+# Integración con sistemas externos
+INTEGRATION_ENABLED: true
+
+# CMS integration
+CMS_TYPE: null                      # wordpress, shopify, magento
+CMS_API_URL: null
+CMS_API_KEY: null
+
+# E-commerce integration
+ECOMMERCE_TYPE: null                # woocommerce, magento, shopify
+ECOMMERCE_API_URL: null
+ECOMMERCE_API_KEY: null
+
+# === CONFIGURACIÓN AVANZADA ===
+
+# Features experimentales
+EXPERIMENTAL_FEATURES: false
+
+# AI model fallback
+FALLBACK_MODEL: "gpt-3.5-turbo"
+
+# Content filtering
+CONTENT_FILTERING: true
+CONTENT_FILTER_STRICT: false
+
+# === CONFIGURACIÓN DE DESARROLLO ===
+
+# Debug mode
+DEBUG_MODE: false
+
+# Development database (testing)
+DEV_DATABASE_URL: null
+
+# Mock responses (testing)
+MOCK_RESPONSES: false
+
+# === CONFIGURACIÓN DE SEGURIDAD ===
+
+# API security
+API_RATE_LIMIT: 1000                # Requests por hora por API key
+API_KEY_HEADER: "X-API-Key"
+
+# Content security
+CONTENT_SANITIZATION: true
+MAX_CONTENT_LENGTH: 10000           # Máximo caracteres por contenido
+
+# === CONFIGURACIÓN DE REDES SOCIALES ===
+
+# Plataformas soportadas por defecto
+DEFAULT_SOCIAL_PLATFORMS: ["Instagram", "Twitter", "Facebook", "LinkedIn"]
+
+# Hashtag settings
+MAX_HASHTAGS_PER_POST: 10
+HASHTAG_CHAR_LIMIT: 280             # Límite de caracteres para hashtags
+
+# === CONFIGURACIÓN DE AUDIENCIAS ===
+
+# Audiencias por defecto
+DEFAULT_AUDIENCES: ["comercial", "lujo", "tecnica"]
+
+# Configuración específica por audiencia
+AUDIENCE_CONFIGS:
+  comercial:
+    tono: "persuasivo"
+    longitud_maxima: 300
+    incluir_cta: true
+  
+  lujo:
+    tono: "sofisticado"
+    longitud_maxima: 400
+    incluir_herencia: true
+  
+  tecnica:
+    tono: "detallado"
+    longitud_maxima: 500
+    incluir_especificaciones: true
+
+# === CONFIGURACIÓN DE SCHEMA.ORG ===
+
+# Tipos de Schema.org soportados
+SCHEMA_ORG_TYPES: ["Product", "ProductCollection", "Offer"]
+
+# Configuración JSON-LD
+JSON_LD_CONTEXT: "https://schema.org/"
+INCLUDE_AGGREGATE_RATING: true
+INCLUDE_OFFERS: false
+
+# === CONFIGURACIÓN DE PERFORMANCE ===
+
+# Optimizaciones de rendimiento
+ENABLE_COMPRESSION: true
+COMPRESSION_LEVEL: 6
+
+# CDN configuration
+CDN_ENABLED: false
+CDN_BASE_URL: null
+
+# === CONFIGURACIÓN DE VALIDACIÓN ===
+
+# Validación de entrada
+STRICT_VALIDATION: true
+ALLOW_PARTIAL_DATA: false
+
+# Sanitización
+SANITIZE_HTML: true
+ALLOWED_HTML_TAGS: ["p", "br", "strong", "em"]
+
+# === CONFIGURACIÓN DE BACKUP ===
+
+# Backup automático
+AUTO_BACKUP: false
+BACKUP_INTERVAL_HOURS: 24
+BACKUP_RETENTION_DAYS: 30
+
+# Backup storage
+BACKUP_STORAGE_PATH: "./backups"
+
+# === CONFIGURACIÓN DE MIGRACIÓN ===
+
+# Versión de esquema
+SCHEMA_VERSION: "1.0"
+
+# Auto-migration
+AUTO_MIGRATION: false
+
+# === NOTAS DE CONFIGURACIÓN ===
+
+# Para desarrollo:
+# - Cambiar AGENT_ENV a "development"
+# - Deshabilitar cache con ENABLE_CACHE=false
+# - Usar LOG_LEVEL="DEBUG"
+
+# Para testing:
+# - Cambiar AGENT_ENV a "testing"
+# - Usar GEMINI_API_KEY="test-key"
+# - Habilitar MOCK_RESPONSES=true
+
+# Para producción:
+# - Configurar todas las variables de producción
+# - Habilitar métricas con ENABLE_METRICS=true
+# - Configurar base de datos y storage
+# - Habilitar backup automático

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guía de Captura - {{ component_type }}</title>
+    <link rel="stylesheet" href="guide_styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-camera"></i> Guía de Captura Fotográfica</h1>
+                <div class="component-info">
+                    <span class="component-type">{{ component_type }}</span>
+                    <span class="component-id">ID: {{ component_id }}</span>
+                </div>
+                <div class="difficulty-badge difficulty-{{ difficulty_class }}">
+                    <i class="fas fa-signal"></i> {{ difficulty_level }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Angles Section -->
+            <section class="section angles-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-compass"></i> Ángulos Óptimos de Captura</h2>
+                    <span class="angle-count">{{ required_views }} vistas requeridas</span>
+                </div>
+                <div class="angles-grid">
+                    {{ angles_html }}
+                </div>
+                <div class="angles-visualization">
+                    <canvas id="angleWheel" width="400" height="400"></canvas>
+                </div>
+            </section>
+
+            <!-- Camera Settings Section -->
+            <section class="section camera-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-camera-retro"></i> Configuraciones de Cámara</h2>
+                    <span class="duration"><i class="fas fa-clock"></i> {{ estimated_duration }} minutos</span>
+                </div>
+                <div class="camera-grid">
+                    {{ camera_settings_html }}
+                </div>
+            </section>
+
+            <!-- Lighting Section -->
+            <section class="section lighting-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-lightbulb"></i> Esquema de Iluminación</h2>
+                </div>
+                <div class="lighting-grid">
+                    {{ lighting_html }}
+                </div>
+                <div class="lighting-diagram">
+                    <canvas id="lightingDiagram" width="500" height="300"></canvas>
+                </div>
+            </section>
+
+            <!-- Checklist Section -->
+            <section class="section checklist-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-list-check"></i> Checklist Visual</h2>
+                    <button class="print-btn" onclick="window.print()">
+                        <i class="fas fa-print"></i> Imprimir Guía
+                    </button>
+                </div>
+                <ul class="checklist">
+                    {{ checklist_html }}
+                </ul>
+            </section>
+
+            <!-- Notes Section -->
+            <section class="section notes-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-sticky-note"></i> Notas Importantes</h2>
+                </div>
+                <div class="notes-content">
+                    <p>{{ notes }}</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2025 Sistema de Fotogrametría de Relojes - Agente Optimizador de Captura v2.0</p>
+            <p>Generado el: <span id="currentDate"></span></p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="guide_interactions.js"></script>
+    <script>
+        document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES');
+    </script>
+</body>
+</html>

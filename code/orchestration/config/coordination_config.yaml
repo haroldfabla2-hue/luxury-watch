@@ -1,0 +1,230 @@
+# Configuración del Sistema de Coordinación Local
+# Configuración principal del coordinador con LangGraph
+
+# Configuración general
+system:
+  name: "Sistema de Coordinación Local"
+  version: "1.0.0"
+  description: "Sistema de orquestación con Ollama y LangGraph"
+  log_level: "INFO"
+  debug_mode: false
+
+# Configuración de Ollama
+ollama:
+  host: "localhost"
+  port: 11434
+  base_url: "http://localhost:11434"
+  timeout: 300
+  max_retries: 3
+  concurrent_requests: 3
+
+# Modelos recomendados y configuración
+models:
+  default: "llama3.1:8b"
+  preferred:
+    - "llama3.1:8b"
+    - "mistral:7b"
+    - "codellama:7b"
+    - "phi3:mini"
+  available:
+    llama3.1:8b:
+      family: "llama"
+      size: "8B"
+      description: "Modelo Llama 3.1 de 8B parámetros"
+      use_case: "General purpose, conversación"
+      temperature: 0.7
+      max_tokens: 512
+    llama3.1:70b:
+      family: "llama"
+      size: "70B"
+      description: "Modelo Llama 3.1 de 70B parámetros"
+      use_case: "Tareas complejas, análisis profundo"
+      temperature: 0.5
+      max_tokens: 1024
+    mistral:7b:
+      family: "mistral"
+      size: "7B"
+      description: "Modelo Mistral de 7B parámetros"
+      use_case: "Rápido, eficiente, multilingüe"
+      temperature: 0.7
+      max_tokens: 512
+    codellama:7b:
+      family: "llama"
+      size: "7B"
+      description: "Modelo especializado en código"
+      use_case: "Generación y análisis de código"
+      temperature: 0.2
+      max_tokens: 1024
+    phi3:mini:
+      family: "phi"
+      size: "3.8B"
+      description: "Microsoft Phi-3 mini"
+      use_case: "Eficiente, tareas ligeras"
+      temperature: 0.8
+      max_tokens: 256
+
+# Configuración de coordinación
+coordination:
+  max_concurrent_workflows: 5
+  agent_timeout: 300
+  workflow_timeout: 1800
+  retry_attempts: 3
+  monitoring_interval: 30
+
+# Configuración de agentes
+agents:
+  coordinator:
+    name: "Coordinador Principal"
+    model: "llama3.1:8b"
+    system_prompt: "Eres un coordinador inteligente que gestiona workflows de agentes. Tu responsabilidad es coordinar la ejecución de tareas entre diferentes agentes especializados."
+    skills:
+      - "coordinacion"
+      - "planificacion"
+      - "monitorizacion"
+      - "decision_making"
+    capabilities:
+      - "workflow_planning"
+      - "agent_monitoring"
+      - "task_coordination"
+      - "error_handling"
+    max_concurrent_tasks: 5
+    timeout: 300
+    priority: 4
+  analyzer:
+    name: "Analizador de Datos"
+    model: "mistral:7b"
+    system_prompt: "Eres un especialista en análisis de datos y extracción de información. Tu función es procesar datos, identificar patrones y generar insights valiosos."
+    skills:
+      - "analisis"
+      - "extraccion"
+      - "estadistica"
+      - "patrones"
+    capabilities:
+      - "data_analysis"
+      - "pattern_recognition"
+      - "insight_generation"
+      - "statistical_analysis"
+    max_concurrent_tasks: 3
+    timeout: 240
+    priority: 3
+  generator:
+    name: "Generador de Contenido"
+    model: "llama3.1:8b"
+    system_prompt: "Eres un especialista en generación de contenido y síntesis de información. Tu función es crear contenido de alta calidad basado en datos y requerimientos."
+    skills:
+      - "escritura"
+      - "creacion"
+      - "sintesis"
+      - "redaccion"
+    capabilities:
+      - "content_generation"
+      - "document_creation"
+      - "information_synthesis"
+      - "summarization"
+    max_concurrent_tasks: 3
+    timeout: 240
+    priority: 3
+  code_executor:
+    name: "Ejecutor de Código"
+    model: "codellama:7b"
+    system_prompt: "Eres un especialista en programación, generación y depuración de código. Tu función es escribir, revisar y optimizar código en diversos lenguajes de programación."
+    skills:
+      - "programacion"
+      - "debugging"
+      - "optimizacion"
+      - "refactoring"
+    capabilities:
+      - "code_generation"
+      - "code_review"
+      - "debugging"
+      - "optimization"
+      - "testing"
+    max_concurrent_tasks: 2
+    timeout: 360
+    priority: 4
+  researcher:
+    name: "Investigador"
+    model: "mistral:7b"
+    system_prompt: "Eres un investigador especializado en búsqueda y síntesis de información. Tu función es investigar temas, encontrar fuentes relevantes y sintetizar hallazgos."
+    skills:
+      - "investigacion"
+      - "busqueda"
+      - "analisis"
+      - "sintesis"
+    capabilities:
+      - "topic_research"
+      - "source_finding"
+      - "research_synthesis"
+      - "literature_review"
+    max_concurrent_tasks: 2
+    timeout: 480
+    priority: 2
+
+# Configuración de workflows
+workflows:
+  analysis:
+    name: "Workflow de Análisis"
+    description: "Workflow para análisis completo de datos"
+    estimated_duration: 30
+    max_steps: 10
+    steps:
+      - "initialize"
+      - "data_extraction"
+      - "data_analysis"
+      - "generate_report"
+      - "finalize"
+  code_generation:
+    name: "Workflow de Generación de Código"
+    description: "Workflow para generación y optimización de código"
+    estimated_duration: 45
+    max_steps: 8
+    steps:
+      - "initialize"
+      - "requirement_analysis"
+      - "code_generation"
+      - "testing"
+      - "optimization"
+      - "finalize"
+  document_processing:
+    name: "Workflow de Procesamiento de Documentos"
+    description: "Workflow para procesamiento y transformación de documentos"
+    estimated_duration: 25
+    max_steps: 6
+    steps:
+      - "initialize"
+      - "document_parsing"
+      - "content_analysis"
+      - "transformation"
+      - "output_generation"
+      - "finalize"
+
+# Configuración de rendimiento
+performance:
+  max_concurrent_agents: 10
+  agent_startup_timeout: 60
+  memory_limit_mb: 2048
+  cpu_limit_percent: 80
+  cache_enabled: true
+  cache_ttl_seconds: 300
+
+# Configuración de logging
+logging:
+  level: "INFO"
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
+  file_rotation: "100 MB"
+  file_retention: "7 days"
+  console_output: true
+  file_output: true
+  log_directory: "logs"
+
+# Configuración de monitoreo
+monitoring:
+  enabled: true
+  metrics_collection: true
+  health_checks: true
+  alert_thresholds:
+    error_rate: 0.1
+    response_time: 30.0
+    memory_usage: 0.9
+    cpu_usage: 0.8
+  check_interval: 60

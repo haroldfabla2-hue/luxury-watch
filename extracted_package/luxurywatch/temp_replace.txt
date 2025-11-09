@@ -1,0 +1,7 @@
+              {/* <WatchConfigurator3DOptimized /> */}
+              <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-2">Configurador 3D en Mantenimiento</h3>
+                  <p className="text-gray-600">El configurador 3D está siendo optimizado. Por favor, intente nuevamente pronto.</p>
+                </div>
+              </div>

@@ -1,0 +1,72 @@
+{
+  "timestamp": "2025-11-06T16:23:26.126256",
+  "componente": "bisel",
+  "analisis": {
+    "tipo": "bisel_fijo",
+    "material": "acero_inoxidable_316l",
+    "acabado": "satinado",
+    "caracteristicas": [
+      "unidireccional",
+      "刻度",
+      "ceramica"
+    ]
+  },
+  "descripciones": {
+    "tecnica": "Bisel fijo de acero inoxidable 316L con acabado satinado y inserciones de cerámica. Sistema de marcación unidireccional para cronografía submarina.",
+    "comercial": "Elegante bisel de acero inoxidable con detalles en cerámica que aportan sofisticación y funcionalidad a tu reloj.",
+    "lujo": "Exquisito bisel de acero 316L con incrustaciones de cerámica, símbolo de elegancia y precisión suiza."
+  },
+  "seo": {
+    "keywords_principales": [
+      "bisel acero inoxidable",
+      "reloj cronógrafo",
+      "ceramica reloj",
+      "bisel unidireccional"
+    ],
+    "meta_description": "Bisel de acero inoxidable 316L con cerámica para relojes cronógrafos. Calidad premium y diseño funcional.",
+    "json_ld": {
+      "@context": "https://schema.org/",
+      "@type": "Product",
+      "name": "Bisel de Acero Inoxidable con Cerámica",
+      "material": "Acero Inoxidable 316L",
+      "additionalProperty": [
+        {
+          "@type": "PropertyValue",
+          "name": "Acabado",
+          "value": "Satinado"
+        },
+        {
+          "@type": "PropertyValue",
+          "name": "Inserciones",
+          "value": "Cerámica"
+        }
+      ]
+    }
+  },
+  "audiencias": {
+    "tecnico": {
+      "enfoque": "especificaciones",
+      "palabras_clave": [
+        "material",
+        "especificaciones",
+        "técnico"
+      ]
+    },
+    "comercial": {
+      "enfoque": "beneficios",
+      "palabras_clave": [
+        "elegante",
+        "funcional",
+        "diseño"
+      ]
+    },
+    "lujo": {
+      "enfoque": "exclusividad",
+      "palabras_clave": [
+        "exquisito",
+        "suizo",
+        "premium"
+      ]
+    }
+  }
+}

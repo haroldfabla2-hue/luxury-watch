@@ -1,0 +1,191 @@
+# Dependencias del Agente 6: Generador de Metadatos y SEO
+# Versión: 1.0.0
+# Fecha: 2025-11-06
+
+# === CORE DEPENDENCIES ===
+
+# Cliente HTTP para comunicación con APIs
+requests>=2.28.0
+
+# Validación de datos
+pydantic>=2.0.0
+jsonschema>=4.17.0
+
+# Configuración y utilidades
+python-dotenv>=1.0.0
+pyyaml>=6.0
+tenacity>=8.0.0  # Para reintentos
+
+# === GEMINI AI INTEGRATION ===
+
+# Cliente OpenRouter para Gemini 2.0
+openrouter>=1.0.0
+
+# === SEO Y METADATOS ===
+
+# Optimización SEO
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+pyparsing>=3.0.0
+
+# Generación de JSON-LD
+json-ld>=1.2.0
+rdflib>=7.0.0  # Para RDF y ontologías
+
+# === CONTENIDO Y TEMPLATES ===
+
+# Motor de templates
+jinja2>=3.1.0
+mako>=1.2.0
+
+# Procesamiento de documentos
+markdown>=3.4.0
+python-docx>=0.8.11
+
+# === UTILIDADES ===
+
+# Manejo de fechas y tiempo
+python-dateutil>=2.8.0
+pytz>=2023.3
+
+# Utilidades del sistema
+psutil>=5.9.0  # Para monitoreo de recursos
+tqdm>=4.65.0   # Barras de progreso
+
+# === DESARROLLO Y TESTING ===
+
+# Testing framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+factory-boy>=3.3.0
+
+# Calidad de código
+black>=23.0.0
+flake8>=6.0.0
+isort>=5.12.0
+mypy>=1.5.0
+
+# Debugging
+ipdb>=0.13.0
+pdb-attach>=2.0.0
+
+# === LOGGING Y MONITOREO ===
+
+# Logging estructurado
+structlog>=23.1.0
+colorlog>=6.7.0
+
+# Métricas y monitoreo
+prometheus-client>=0.17.0
+psutil>=5.9.0
+
+# === CACHE Y STORAGE ===
+
+# Sistema de cache
+redis>=4.6.0
+cachetools>=5.3.0
+diskcache>=5.6.0
+
+# Base de datos para cache (opcional)
+sqlalchemy>=2.0.0
+alembic>=1.11.0
+
+# === CONFIGURACIÓN ===
+
+# Configuración y settings
+python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
+pyyaml>=6.0.0
+
+# === VALIDACIÓN Y SERIALIZACIÓN ===
+
+# Marshmallow para serialización
+marshmallow>=3.20.0
+
+# Validación adicional
+cerberus>=1.3.0
+voluptuous>=0.13.0
+
+# === IMAGE PROCESSING (para thumbnails y previews) ===
+
+# Procesamiento de imágenes
+Pillow>=10.0.0
+opencv-python>=4.8.0
+
+# === NOTIFICACIONES ===
+
+# Sistema de notificaciones
+requests>=2.31.0
+slack-sdk>=3.21.0  # Para integración con Slack
+telegram-bot>=20.0.0  # Para notificaciones Telegram
+
+# === WEB SCRAPING (para análisis competitivo) ===
+
+# Scraping web
+selenium>=4.11.0
+scrapy>=2.10.0
+playwright>=1.37.0
+
+# === ANALYSIS TOOLS ===
+
+# Análisis de contenido
+textblob>=0.17.0
+vaderSentiment>=3.3.0  # Para análisis de sentimientos
+langdetect>=1.0.9      # Detección de idiomas
+
+# === PERFORMANCE ===
+
+# Optimización de rendimiento
+ujson>=5.7.0  # JSON más rápido
+orjson>=3.9.0  # JSON aún más rápido
+
+# === CLOUD INTEGRATIONS ===
+
+# AWS S3 para storage (opcional)
+boto3>=1.28.0
+
+# Google Cloud Storage (opcional)
+google-cloud-storage>=2.10.0
+
+# Azure Blob Storage (opcional)
+azure-storage-blob>=12.18.0
+
+# === DOCKER Y DEPLOYMENT ===
+
+# Para containerización
+gunicorn>=21.0.0
+uvicorn>=0.23.0
+
+# === DESARROLLO ESPECÍFICO ===
+
+# Herramientas específicas para desarrollo
+jupyter>=1.0.0
+notebook>=6.5.0
+
+# === DOCUMENTACIÓN ===
+
+# Generación de documentación
+sphinx>=7.1.0
+sphinx-rtd-theme>=1.3.0
+
+# === OTRAS UTILIDADES ===
+
+# Manejo de archivos y paths
+pathlib2>=2.3.7
+filelock>=3.12.0
+
+# Cryptography para APIs
+cryptography>=41.0.0
+pyjwt>=2.8.0
+
+# === INSTALL NOTES ===
+#
+# Para instalación rápida:
+# pip install -r requirements.txt
+#
+# Para instalación en desarrollo:
+# pip install -r requirements.txt -r requirements-dev.txt
+#
+# Para instalación mínima (solo dependencias core):
+# pip install aiohttp pandas pydantic jsonschema jinja2 python-dateutil

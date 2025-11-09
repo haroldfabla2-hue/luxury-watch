@@ -1,0 +1,68 @@
+# Dependencias principales del Agente 4: Validador de Calidad 3D
+# Instalar con: pip install -r requirements.txt
+
+# === DEPENDENCIAS CORE ===
+open3d>=0.18.0                 # Procesamiento de geometría 3D
+numpy>=1.21.0                  # Cálculos numéricos
+scipy>=1.7.0                   # Funciones científicas
+
+# === PROCESAMIENTO DE IMÁGENES ===
+opencv-python>=4.5.0          # Computer vision y procesamiento de imágenes
+Pillow>=8.3.0                 # Manejo de imágenes (más flexible que OpenCV para algunas operaciones)
+
+# === MÉTRICAS Y VISUALIZACIÓN ===
+scikit-image>=0.18.0          # SSIM y métricas de imagen
+matplotlib>=3.4.0             # Visualizaciones
+seaborn>=0.11.0               # Visualizaciones estadísticas mejoradas
+
+# === DEPENDENCIAS OPCIONALES (para métricas avanzadas) ===
+# Descomenta estas líneas si necesitas métricas LPIPS
+# torch>=1.9.0                 # Framework de deep learning
+# torchvision>=0.10.0          # Modelos pre-entrenados para LPIPS
+# lpips>=0.1.4                 # Métricas perceptuales avanzadas
+
+# === FORMATOS Y ARCHIVOS ===
+pygltflib>=2.0.0              # Procesamiento de archivos GLTF/GLB
+jsonschema>=4.0.0             # Validación de JSON
+
+# === UTILIDADES ===
+tqdm>=4.62.0                  # Barras de progreso
+colorama>=0.4.4               # Colores en terminal
+requests>=2.26.0              # HTTP requests (para integraciones futuras)
+
+# === TESTING (opcional) ===
+# pytest>=6.2.0               # Framework de testing
+# pytest-cov>=2.12.0          # Coverage de tests
+# pytest-mock>=3.6.0          # Mocking para tests
+
+# === DESARROLLO (opcional) ===
+# black>=21.0.0               # Code formatter
+# flake8>=3.9.0               # Linting
+# mypy>=0.910                # Type checking
+
+# === DEPENDENCIAS DEL SISTEMA REQUERIDAS ===
+# En Ubuntu/Debian instalar con:
+# sudo apt update
+# sudo apt install python3-dev python3-pip
+# sudo apt install libopencv-dev python3-opencv
+
+# === NOTAS DE INSTALACIÓN ===
+# 
+# 1. Para instalar todas las dependencias:
+#    pip install -r requirements.txt
+#
+# 2. Para instalar solo dependencias básicas (sin LPIPS):
+#    pip install open3d numpy scipy opencv-python Pillow matplotlib seaborn scikit-image
+#
+# 3. Para LPIPS (métricas avanzadas):
+#    pip install torch torchvision lpips
+#
+# 4. Si tienes problemas con Open3D:
+#    pip uninstall open3d
+#    pip install open3d-cpu
+#
+# 5. En Windows puede ser necesario Visual Studio Build Tools para compilar
+#    algunas dependencias. Instalar desde: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+#
+# 6. En macOS puede necesitar Xcode Command Line Tools:
+#    xcode-select --install

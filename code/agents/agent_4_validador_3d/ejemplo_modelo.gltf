@@ -1,0 +1,158 @@
+{
+    "asset": {
+        "version": "2.0",
+        "generator": "Validador3D-Ejemplo",
+        "copyright": "Ejemplo para demostración del Agente 4"
+    },
+    "scene": 0,
+    "scenes": [
+        {
+            "nodes": [0],
+            "name": "EscenaPrincipal"
+        }
+    ],
+    "nodes": [
+        {
+            "mesh": 0,
+            "name": "CuboEjemplo",
+            "translation": [0, 0, 0],
+            "rotation": [0, 0, 0, 1],
+            "scale": [1, 1, 1]
+        }
+    ],
+    "meshes": [
+        {
+            "primitives": [
+                {
+                    "attributes": {
+                        "POSITION": 0,
+                        "NORMAL": 1,
+                        "TEXCOORD_0": 2
+                    },
+                    "indices": 3,
+                    "material": 0
+                }
+            ],
+            "name": "MallaCubo",
+            "weights": [0.0]
+        }
+    ],
+    "materials": [
+        {
+            "name": "MaterialEjemplo",
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [0.8, 0.8, 0.8, 1.0],
+                "metallicFactor": 0.0,
+                "roughnessFactor": 0.5
+            },
+            "doubleSided": false
+        }
+    ],
+    "textures": [
+        {
+            "sampler": 0,
+            "source": 0,
+            "name": "TexturaBase"
+        }
+    ],
+    "images": [
+        {
+            "uri": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
+            "mimeType": "image/png",
+            "name": "ImagenEjemplo"
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497,
+            "name": "MuestreadorPorDefecto"
+        }
+    ],
+    "buffers": [
+        {
+            "byteLength": 288,
+            "uri": "data:application/octet-stream;base64,AAAAIGZpbGUtbGluZWFyAAAABQAAAHYAAAABAAAAAQAAAAEAAABlc3QAAAABAAAAAQAAAAEAAAA",
+            "name": "BufferEjemplo"
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteOffset": 0,
+            "byteLength": 192,
+            "byteStride": 12,
+            "target": 34962,
+            "name": "VistaVertices"
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 192,
+            "byteLength": 192,
+            "byteStride": 12,
+            "target": 34962,
+            "name": "VistaNormales"
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 384,
+            "byteLength": 128,
+            "byteStride": 8,
+            "target": 34962,
+            "name": "VistaUV"
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 512,
+            "byteLength": 24,
+            "target": 34963,
+            "name": "VistaIndices"
+        }
+    ],
+    "accessors": [
+        {
+            "bufferView": 0,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 16,
+            "type": "VEC3",
+            "min": [-1.0, -1.0, -1.0],
+            "max": [1.0, 1.0, 1.0],
+            "name": "AccesoVertices"
+        },
+        {
+            "bufferView": 1,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 16,
+            "type": "VEC3",
+            "name": "AccesoNormales"
+        },
+        {
+            "bufferView": 2,
+            "byteOffset": 0,
+            "componentType": 5126,
+            "count": 16,
+            "type": "VEC2",
+            "name": "AccesoUV"
+        },
+        {
+            "bufferView": 3,
+            "byteOffset": 0,
+            "componentType": 5123,
+            "count": 12,
+            "type": "SCALAR",
+            "name": "AccesoIndices"
+        }
+    ],
+    "extensions": {},
+    "extensionsUsed": [],
+    "extras": {
+        "author": "Agente4 Validador3D",
+        "description": "Archivo de ejemplo para demostrar validación 3D",
+        "license": "MIT",
+        "tags": ["ejemplo", "demo", "cubo", "3d"]
+    }
+}

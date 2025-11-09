@@ -1,0 +1,218 @@
+# Configuración del Gestor de Estado y Persistencia
+# Configuración para el manejo de datos del sistema
+
+# Configuración de base de datos
+database:
+  # Ruta de la base de datos
+  path: "data/orchestration_state.db"
+  
+  # Configuración de SQLite
+  timeout: 30.0
+  check_same_thread: false
+  
+  # Configuración de respaldos
+  backup_enabled: true
+  backup_interval_hours: 6
+  max_backup_files: 10
+  backup_directory: "data/backups"
+  
+  # Configuración de limpieza
+  cleanup_old_data: true
+  cleanup_interval_hours: 24
+  retention_days: 30
+  batch_cleanup: true
+
+# Configuración de caché en memoria
+cache:
+  enabled: true
+  max_size_mb: 100
+  ttl_seconds: 300
+  cleanup_interval_minutes: 10
+  max_entries: 10000
+  
+  # Estrategias de caché
+  strategy: "ttl"  # ttl, lru, lfu
+  preload_common_data: true
+  
+  # Configuración de invalidación
+  auto_invalidate: true
+  dependency_tracking: false
+
+# Configuración de persistencia
+persistence:
+  auto_save_interval_seconds: 60
+  batch_operations: true
+  batch_size: 100
+  max_batch_wait_time: 5.0
+  
+  # Configuración de transacciones
+  use_transactions: true
+  transaction_timeout: 30.0
+  rollback_on_error: true
+  
+  # Configuración de índices
+  optimize_indexes: true
+  reindex_interval_hours: 24
+
+# Configuración de compresión
+compression:
+  enabled: false
+  algorithm: "gzip"
+  level: 6
+  
+  # Datos a comprimir
+  compress_messages: false
+  compress_large_payloads: true
+  compression_threshold_kb: 100
+
+# Configuración de migración de datos
+migration:
+  auto_migration: true
+  migration_directory: "data/migrations"
+  backup_before_migration: true
+  version_tracking: true
+
+# Configuración de recuperación
+recovery:
+  auto_recovery: true
+  recovery_attempts: 3
+  recovery_delay_seconds: 5
+  
+  # Verificación de integridad
+  integrity_checks: true
+  check_interval_hours: 6
+  repair_on_corruption: true
+
+# Configuración de replicación (futuro)
+replication:
+  enabled: false
+  master_server: null
+  slave_servers: []
+  sync_interval_seconds: 300
+  conflict_resolution: "last_write_wins"
+
+# Configuración de logging de base de datos
+db_logging:
+  enabled: false
+  log_slow_queries: true
+  slow_query_threshold_ms: 1000
+  log_sql_statements: false
+  log_file: "logs/database.log"
+
+# Configuración de estadísticas
+statistics:
+  collect_detailed_stats: true
+  stats_retention_days: 7
+  performance_metrics: true
+  usage_analytics: true
+  
+  # Métricas específicas
+  track_query_performance: true
+  track_storage_growth: true
+  track_cache_effectiveness: true
+
+# Configuración de seguridad
+security:
+  # Encriptación de datos sensibles
+  encrypt_sensitive_data: false
+  encryption_key_file: "config/encryption.key"
+  
+  # Auditoría
+  audit_enabled: false
+  audit_table: "audit_log"
+  audit_sensitive_operations: true
+  
+  # Configuración de backup seguro
+  secure_backup: false
+  backup_encryption: false
+
+# Configuración de rendimiento específico
+performance_tuning:
+  # Configuración de SQLite PRAGMA
+  pragma_settings:
+    journal_mode: "WAL"
+    synchronous: "NORMAL"
+    cache_size: 10000
+    temp_store: "memory"
+    mmap_size: 268435456
+    page_size: 4096
+  
+  # Configuración de pool de conexiones
+  connection_pool:
+    max_connections: 20
+    min_connections: 5
+    connection_timeout: 30.0
+    idle_timeout: 300.0
+
+# Configuración de tipos de datos
+data_types:
+  # Configuración específica para diferentes tipos de datos
+  agents:
+    max_conversation_history: 100
+    compress_large_metrics: true
+    retention_days: 90
+  
+  workflows:
+    max_context_size: 10000
+    compress_results: true
+    retention_days: 30
+  
+  tasks:
+    max_payload_size: 50000
+    compress_large_tasks: true
+    retention_days: 7
+  
+  messages:
+    max_content_length: 10000
+    compress_long_messages: true
+    retention_days: 14
+
+# Configuración de búsqueda
+search:
+  enabled: true
+  full_text_search: false
+  index_agent_names: true
+  index_workflow_types: true
+  index_timestamps: true
+  
+  # Configuración de índices adicionales
+  custom_indexes:
+    - table: "workflows"
+      columns: ["status", "workflow_type", "created_at"]
+    - table: "tasks"
+      columns: ["status", "agent_id", "priority"]
+    - table: "messages"
+      columns: ["source_agent", "target_agent", "timestamp"]
+
+# Configuración de notificaciones
+notifications:
+  enabled: true
+  notify_on_errors: true
+  notify_on_completion: false
+  notify_on_performance_issues: true
+  
+  # Configuración de alertas
+  alert_thresholds:
+    db_size_gb: 10.0
+    slow_query_count: 10
+    error_rate_percent: 5.0
+    cache_hit_rate_percent: 80.0
+
+# Configuración de desarrollo/desarrollo
+development:
+  debug_mode: false
+  log_sql_queries: false
+  validate_data_integrity: false
+  enable_profiling: false
+  
+  # Configuración de testing
+  test_mode: false
+  mock_external_services: false
+  use_in_memory_db: false
+
+# Configuración de compatibilidad
+compatibility:
+  sqlite_version_min: "3.35"
+  python_version_min: "3.8"
+  backward_compatibility: true
+  auto_schema_updates: true
