@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Send, Bot, User, Settings, Minimize2, Maximize2 } from 'lucide-react'
 import { Button, Input, Card, ScrollArea, Badge, Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui'
+import { api } from '@/lib/api'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Message {
   id: string
@@ -27,8 +29,10 @@ export default function AIChat({ isOpen = true, onToggle, sessionId, position = 
   const [selectedProvider, setSelectedProvider] = useState('openai')
   const [isMinimized, setIsMinimized] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isConnected, setIsConnected] = useState(false)
   const socketRef = useRef<WebSocket | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const { user } = useAuth()
 
   // Available models and providers
   const models = {
@@ -64,14 +68,22 @@ export default function AIChat({ isOpen = true, onToggle, sessionId, position = 
   const initializeWebSocket = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) return
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8081'
-    const ws = new WebSocket(wsUrl)
+    const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001'
+    const wsUrl = baseUrl.replace('http', 'ws') + '/ws/chat'
+    const token = localStorage.getItem('token')
+    
+    const ws = new WebSocket(wsUrl + (token ? `?token=${token}` : ''))
     socketRef.current = ws
 
     ws.onopen = () => {
       console.log('Chat WebSocket connected')
+      setIsConnected(true)
       if (sessionId) {
-        ws.send(JSON.stringify({ type: 'join_session', sessionId }))
+        ws.send(JSON.stringify({ 
+          type: 'join_session', 
+          sessionId,
+          userId: user?.id
+        }))
       }
     }
 
@@ -82,6 +94,26 @@ export default function AIChat({ isOpen = true, onToggle, sessionId, position = 
           setMessages(prev => [...prev, data.message])
         } else if (data.type === 'error') {
           console.error('WebSocket error:', data.error)
+        } else if (data.type === 'stream') {
+          // Handle streaming responses
+          const assistantMessage: Message = {
+            id: data.messageId || Date.now().toString(),
+            role: 'assistant',
+            content: data.content,
+            timestamp: new Date().toISOString(),
+            provider: data.provider,
+            model: data.model
+          }
+          setMessages(prev => {
+            const existingIndex = prev.findIndex(m => m.id === assistantMessage.id)
+            if (existingIndex >= 0) {
+              const newMessages = [...prev]
+              newMessages[existingIndex] = assistantMessage
+              return newMessages
+            } else {
+              return [...prev, assistantMessage]
+            }
+          })
         }
       } catch (error) {
         console.error('Failed to parse WebSocket message:', error)
@@ -90,10 +122,12 @@ export default function AIChat({ isOpen = true, onToggle, sessionId, position = 
 
     ws.onerror = (error) => {
       console.error('WebSocket error:', error)
+      setIsConnected(false)
     }
 
     ws.onclose = () => {
       console.log('Chat WebSocket disconnected')
+      setIsConnected(false)
     }
   }
 
@@ -112,52 +146,48 @@ export default function AIChat({ isOpen = true, onToggle, sessionId, position = 
     setInput('')
     setIsLoading(true)
 
-    // Send to WebSocket
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({
-        type: 'send_message',
-        sessionId: sessionId || 'default-session',
-        content: messageContent,
-        model: selectedModel,
-        provider: selectedProvider
-      }))
-    } else {
-      // Fallback to direct API call
-      try {
-        const response = await fetch('/api-gateway', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            prompt: messageContent,
-            model: selectedModel,
-            max_tokens: 1000,
-            temperature: 0.7
-          })
+    try {
+      // Try WebSocket first, then fallback to API
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        socketRef.current.send(JSON.stringify({
+          type: 'send_message',
+          sessionId: sessionId || 'default-session',
+          content: messageContent,
+          model: selectedModel,
+          provider: selectedProvider,
+          userId: user?.id
+        }))
+      } else {
+        // Fallback to REST API using our API client
+        const response = await api.chat.sendMessage({
+          message: messageContent,
+          model: selectedModel,
+          provider: selectedProvider,
+          sessionId: sessionId || 'default-session',
+          userId: user?.id
         })
 
-        const data = await response.json()
-        
-        if (data.content) {
+        if (response.data && response.data.message) {
           const assistantMessage: Message = {
             id: (Date.now() + 1).toString(),
             role: 'assistant',
-            content: data.content,
+            content: response.data.message.content,
             timestamp: new Date().toISOString(),
-            provider: data.providerUsed,
-            model: selectedModel
+            provider: response.data.message.provider,
+            model: response.data.message.model
           }
           setMessages(prev => [...prev, assistantMessage])
         }
-      } catch (error) {
-        console.error('API call failed:', error)
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: 'system',
-          content: 'Sorry, I encountered an error processing your request. Please try again.',
-          timestamp: new Date().toISOString()
-        }
-        setMessages(prev => [...prev, errorMessage])
       }
+    } catch (error) {
+      console.error('Chat API call failed:', error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'system',
+        content: 'Lo siento, encontré un error procesando tu solicitud. Por favor, intenta de nuevo.',
+        timestamp: new Date().toISOString()
+      }
+      setMessages(prev => [...prev, errorMessage])
     }
 
     setIsLoading(false)
@@ -201,6 +231,9 @@ export default function AIChat({ isOpen = true, onToggle, sessionId, position = 
             <Badge variant="secondary" className="text-xs">
               {selectedProvider}
             </Badge>
+            <div className={`w-2 h-2 rounded-full ${
+              isConnected ? 'bg-green-400' : 'bg-red-400'
+            }`} title={isConnected ? 'Conectado' : 'Desconectado'} />
           </div>
           <div className="flex items-center gap-1">
             <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>

@@ -5,7 +5,7 @@ import { loadStripe, Stripe } from '@stripe/stripe-js'
 import { Elements } from '@stripe/react-stripe-js'
 import { useConfiguratorStore } from '../store/configuratorStore'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabaseClient'
+import { api } from '../lib/api'
 import {
   STRIPE_PUBLISHABLE_KEY,
   STRIPE_PAYMENT_INTENT_URL,
@@ -97,76 +97,51 @@ const CheckoutPage = () => {
       return
     }
 
-    // Verificar si Stripe está configurado
-    if (!isStripeConfigured()) {
-      setError(
-        'Stripe no está configurado correctamente. ' + STRIPE_SETUP_MESSAGE
-      )
-      return
-    }
-
     setIsCreatingIntent(true)
     setError(null)
 
     try {
-      // Obtener token de sesión
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        throw new Error('No hay sesión activa')
-      }
-
       // Preparar datos del pedido
-      const shippingAddress = {
-        fullName: formData.fullName,
-        address: formData.address,
-        city: formData.city,
-        postalCode: formData.postalCode,
-        country: formData.country,
-        phone: formData.phone,
-      }
-
-      const billingAddress = shippingAddress // Usar misma dirección
-
-      // Preparar items del carrito
-      const cartItems = cart.map((item) => ({
-        id: item.id,
-        configuration: item.configuration,
-        quantity: item.quantity,
-        totalPrice: item.totalPrice,
-      }))
-
-      // Llamar al edge function
-      const response = await fetch(STRIPE_PAYMENT_INTENT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+      const orderData = {
+        customerId: user?.id,
+        items: cart.map((item) => ({
+          watchConfigurationId: item.id,
+          quantity: item.quantity,
+          price: item.totalPrice,
+          configuration: item.configuration
+        })),
+        shippingAddress: {
+          fullName: formData.fullName,
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country,
+          phone: formData.phone,
         },
-        body: JSON.stringify({
-          amount: finalTotal,
-          currency: DEFAULT_CURRENCY,
-          cartItems,
-          customerEmail: formData.email,
-          shippingAddress,
-          billingAddress,
-        }),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(
-          errorData.error?.message || 'Error al crear intención de pago'
-        )
+        billingAddress: {
+          fullName: formData.fullName,
+          address: formData.address,
+          city: formData.city,
+          postalCode: formData.postalCode,
+          country: formData.country,
+          phone: formData.phone,
+        },
+        customerEmail: formData.email,
+        subtotal: total,
+        tax: tax,
+        shipping: shipping,
+        total: finalTotal,
+        currency: 'EUR'
       }
 
-      const result = await response.json()
+      // Usar nuestro API client para crear el pedido
+      const response = await api.createOrder(orderData)
 
-      if (!result.data?.clientSecret) {
+      if (response.data?.clientSecret) {
+        setClientSecret(response.data.clientSecret)
+      } else {
         throw new Error('No se recibió client secret del servidor')
       }
-
-      setClientSecret(result.data.clientSecret)
     } catch (err) {
       console.error('Error creating payment intent:', err)
       const message = err instanceof Error ? err.message : 'Error desconocido'

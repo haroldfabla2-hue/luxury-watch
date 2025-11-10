@@ -14,6 +14,7 @@ import {
   Save,
   X
 } from 'lucide-react'
+import { api } from '@/lib/api'
 
 interface APIProvider {
   id: string
@@ -111,25 +112,34 @@ export function APIManagement() {
   const loadAPIConfiguration = async () => {
     setIsLoading(true)
     try {
-      // Simular carga desde Supabase
-      const mockProviders: APIProvider[] = defaultProviders.map((provider, index) => ({
-        id: `provider-${index + 1}`,
-        ...provider,
-        isActive: index < 2, // Primeros 2 activos por defecto
-        apiKey: '',
-        healthMetrics: {
-          successRate: 95 + Math.random() * 5,
-          avgLatency: 200 + Math.random() * 300,
-          totalRequests: 1000 + Math.floor(Math.random() * 5000),
-          isHealthy: Math.random() > 0.1,
-          lastCheck: new Date().toISOString()
-        },
-        priority: index + 1
-      })) as APIProvider[]
-
-      setProviders(mockProviders)
+      // Cargar proveedores desde la API
+      const providersResponse = await api.getAIProviders()
+      const providersData = providersResponse.data || []
       
-      // Simular modelos
+      if (providersData.length === 0) {
+        // Si no hay proveedores en la DB, usar los por defecto
+        const defaultProvidersData: APIProvider[] = defaultProviders.map((provider, index) => ({
+          id: `provider-${index + 1}`,
+          ...provider,
+          isActive: index < 2, // Primeros 2 activos por defecto
+          apiKey: '',
+          healthMetrics: {
+            successRate: 95 + Math.random() * 5,
+            avgLatency: 200 + Math.random() * 300,
+            totalRequests: 1000 + Math.floor(Math.random() * 5000),
+            isHealthy: Math.random() > 0.1,
+            lastCheck: new Date().toISOString()
+          },
+          priority: index + 1
+        })) as APIProvider[]
+        
+        setProviders(defaultProvidersData)
+      } else {
+        setProviders(providersData)
+      }
+      
+      // Cargar modelos desde la API
+      // Por ahora usar datos por defecto hasta que la API tenga soporte completo
       const mockModels: APIModel[] = [
         {
           id: 'model-1',
@@ -169,6 +179,23 @@ export function APIManagement() {
       setModels(mockModels)
     } catch (error) {
       console.error('Failed to load API configuration:', error)
+      // Fallback a datos por defecto en caso de error
+      const fallbackProviders: APIProvider[] = defaultProviders.map((provider, index) => ({
+        id: `provider-${index + 1}`,
+        ...provider,
+        isActive: index < 2,
+        apiKey: '',
+        healthMetrics: {
+          successRate: 95 + Math.random() * 5,
+          avgLatency: 200 + Math.random() * 300,
+          totalRequests: 1000 + Math.floor(Math.random() * 5000),
+          isHealthy: Math.random() > 0.1,
+          lastCheck: new Date().toISOString()
+        },
+        priority: index + 1
+      })) as APIProvider[]
+      
+      setProviders(fallbackProviders)
     } finally {
       setIsLoading(false)
     }
@@ -187,31 +214,33 @@ export function APIManagement() {
     setTestResults(prev => ({ ...prev, [providerId]: { loading: true } }))
 
     try {
-      // Simular test
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      const success = Math.random() > 0.2 // 80% de éxito simulado
-      const latency = 150 + Math.random() * 300
-      
-      const result = {
-        success,
-        latency: Math.round(latency),
-        message: success ? 'Provider is working correctly' : 'Provider test failed',
-        timestamp: new Date().toISOString()
-      }
+      // Probar proveedor real usando la API
+      const response = await fetch('/api/chat/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          providerId: providerId,
+          apiKey: provider.apiKey
+        })
+      })
 
+      const result = await response.json()
+      
       setTestResults(prev => ({ ...prev, [providerId]: result }))
 
-      // Actualizar métricas de salud
+      // Actualizar métricas de salud con datos reales
       setProviders(prev => prev.map(p => 
         p.id === providerId 
           ? { 
               ...p, 
               healthMetrics: {
                 ...p.healthMetrics,
-                successRate: success ? 100 : 0,
-                avgLatency: latency,
-                isHealthy: success,
+                successRate: result.success ? 100 : 0,
+                avgLatency: result.latency || p.healthMetrics.avgLatency,
+                isHealthy: result.success,
                 lastCheck: new Date().toISOString()
               }
             }
@@ -229,14 +258,58 @@ export function APIManagement() {
     }
   }
 
-  const saveProvider = (provider: APIProvider) => {
-    if (provider.id) {
-      setProviders(prev => prev.map(p => p.id === provider.id ? provider : p))
-    } else {
-      const newProvider = { ...provider, id: `provider-${Date.now()}` }
-      setProviders(prev => [...prev, newProvider])
+  const saveProvider = async (provider: APIProvider) => {
+    try {
+      if (provider.id) {
+        // Actualizar proveedor existente
+        const response = await api.updateProviderSettings(provider.id, {
+          name: provider.name,
+          displayName: provider.displayName,
+          baseUrl: provider.baseUrl,
+          apiKey: provider.apiKey,
+          authenticationType: provider.authenticationType,
+          costPerToken: provider.costPerToken,
+          isActive: provider.isActive
+        })
+        
+        if (response.data) {
+          setProviders(prev => prev.map(p => p.id === provider.id ? response.data : p))
+        }
+      } else {
+        // Crear nuevo proveedor
+        const response = await fetch('/api/chat/providers', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({
+            name: provider.name,
+            displayName: provider.displayName,
+            baseUrl: provider.baseUrl,
+            apiKey: provider.apiKey,
+            authenticationType: provider.authenticationType,
+            costPerToken: provider.costPerToken
+          })
+        })
+        
+        const newProvider = await response.json()
+        if (newProvider) {
+          setProviders(prev => [...prev, newProvider])
+        }
+      }
+      setEditingProvider(null)
+    } catch (error) {
+      console.error('Failed to save provider:', error)
+      // Fallback a comportamiento local en caso de error
+      if (provider.id) {
+        setProviders(prev => prev.map(p => p.id === provider.id ? provider : p))
+      } else {
+        const newProvider = { ...provider, id: `provider-${Date.now()}` }
+        setProviders(prev => [...prev, newProvider])
+      }
+      setEditingProvider(null)
     }
-    setEditingProvider(null)
   }
 
   const deleteProvider = (providerId: string) => {
