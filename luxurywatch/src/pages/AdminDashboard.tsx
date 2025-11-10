@@ -125,9 +125,17 @@ const AdminDashboard = () => {
             <h1 className="text-2xl font-headline font-bold text-gold-500">
               Panel de Administración - LuxuryWatch
             </h1>
-            <a href="/" className="text-neutral-600 hover:text-neutral-900">
-              Volver al Sitio
-            </a>
+            <div className="flex items-center gap-4">
+              <a href="/crm" className="text-neutral-600 hover:text-neutral-900 px-3 py-2 rounded hover:bg-gray-100">
+                CRM Dashboard
+              </a>
+              <a href="/api-management" className="text-neutral-600 hover:text-neutral-900 px-3 py-2 rounded hover:bg-gray-100">
+                API Management
+              </a>
+              <a href="/" className="text-neutral-600 hover:text-neutral-900 px-3 py-2 rounded hover:bg-gray-100">
+                Volver al Sitio
+              </a>
+            </div>
           </div>
         </div>
       </nav>

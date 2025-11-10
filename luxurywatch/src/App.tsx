@@ -8,7 +8,10 @@ import CheckoutPage from './pages/CheckoutPage'
 import AdminDashboard from './pages/AdminDashboard'
 import BlogPage from './pages/BlogPage'
 import MarketplacePage from './pages/MarketplacePage'
+import CRMDashboardPage from './pages/CRMDashboardPage'
+import APIManagementPage from './pages/APIManagementPage'
 import GranularSystemDemo from './components/GranularSystemDemo'
+import AIChat from './components/AIChat'
 
 function App() {
   return (
@@ -22,9 +25,13 @@ function App() {
           <Route path="/demo-granular" element={<GranularSystemDemo />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/crm" element={<CRMDashboardPage />} />
+          <Route path="/api-management" element={<APIManagementPage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
         </Routes>
+        {/* Chat IA Global - Disponible en todas las páginas */}
+        <AIChat position="bottom-right" />
       </BrowserRouter>
     </AuthProvider>
   )
