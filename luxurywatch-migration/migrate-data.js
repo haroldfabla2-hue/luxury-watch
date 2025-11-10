@@ -18,7 +18,7 @@ async function migrateSampleData() {
     
     const createdCategories = [];
     for (const category of categories) {
-      const created = await prisma.category.upsert({
+      const created = await prisma.productCategory.upsert({
         where: { slug: category.slug },
         update: category,
         create: category

@@ -1,0 +1,29 @@
+{
+  "name": "luxurywatch-migration",
+  "version": "1.0.0",
+  "description": "Database migration from Supabase to new PostgreSQL schema",
+  "main": "setup.js",
+  "scripts": {
+    "setup": "node setup.js",
+    "migrate": "node migrate-data.js",
+    "verify": "node verify-data.js",
+    "analyze": "node analyze.js",
+    "start": "node setup.js && node migrate-data.js && node verify-data.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^16.3.1",
+    "sqlite3": "^5.1.6"
+  },
+  "keywords": [
+    "database",
+    "migration",
+    "luxurywatch",
+    "postgresql"
+  ],
+  "author": "MiniMax Agent",
+  "license": "MIT",
+  "devDependencies": {
+    "prisma": "^6.19.0"
+  }
+}

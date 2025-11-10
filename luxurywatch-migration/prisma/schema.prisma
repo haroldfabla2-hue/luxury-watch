@@ -1,0 +1,721 @@
+// Migration Schema for LuxuryWatch
+// Optimized for SQLite migration testing
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Core Product Models
+model Product {
+  id          String            @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal
+  currency    String            @default("USD")
+  sku         String            @unique
+  stock       Int               @default(0)
+  status      ProductStatus     @default(ACTIVE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  
+  // Relationships
+  variants    ProductVariant[]
+  categoryId  String?
+  category    ProductCategory?  @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  tags        ProductTag[]
+  
+  @@map("products")
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  name        String
+  price       Decimal?
+  sku         String   @unique
+  stock       Int      @default(0)
+  attributes  Json?    // Flexible attribute storage
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("product_variants")
+}
+
+model ProductCategory {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  slug        String     @unique
+  description String?
+  parentId    String?
+  parent      ProductCategory? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    ProductCategory[] @relation("CategoryHierarchy")
+  products    Product[]
+  
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  @@map("product_categories")
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  alt       String?
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("product_images")
+}
+
+model ProductTag {
+  id       String   @id @default(cuid())
+  name     String   @unique
+  color    String?
+  productId String
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  
+  @@map("product_tags")
+}
+
+// Watch Configuration Models
+model WatchMaterial {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        MaterialType
+  price       Decimal  @default(0)
+  density     Float?
+  color       String?
+  finish      String?
+  description String?
+  properties  Json?    // Physical properties for 3D rendering
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Reverse relations
+  watchConfigurations WatchConfiguration[]
+  watchCases          WatchCase[]
+  watchDials          WatchDial[]
+  watchHands          WatchHands[]
+  watchStraps         WatchStrap[]
+  
+  @@map("watch_materials")
+}
+
+model WatchCase {
+  id           String   @id @default(cuid())
+  name         String   @unique
+  shape        String   // Round, Square, etc.
+  diameter     Float    // mm
+  thickness    Float    // mm
+  lugWidth     Float?   // mm
+  materialId   String
+  material     WatchMaterial @relation(fields: [materialId], references: [id])
+  price        Decimal  @default(0)
+  waterResistance Int?   // meters
+  crystal      String?  // Sapphire, Mineral, etc.
+  description  String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  watchConfigurations WatchConfiguration[]
+  
+  @@map("watch_cases")
+}
+
+model WatchDial {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  color       String
+  finish      String?  // Sunburst, Matte, etc.
+  hourMarkers String   // Arabic, Roman, Indices, etc.
+  materialId  String?
+  material    WatchMaterial? @relation(fields: [materialId], references: [id])
+  price       Decimal  @default(0)
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  watchConfigurations WatchConfiguration[]
+  
+  @@map("watch_dials")
+}
+
+model WatchHands {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  style     String   // Sword, Dauphine, etc.
+  color     String
+  size      String   // Length proportions
+  materialId String?
+  material  WatchMaterial? @relation(fields: [materialId], references: [id])
+  price     Decimal  @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  watchConfigurations WatchConfiguration[]
+  
+  @@map("watch_hands")
+}
+
+model WatchStrap {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        StrapType
+  materialId  String?
+  material    WatchMaterial? @relation(fields: [materialId], references: [id])
+  color       String
+  width       Float    // mm
+  length      Float?   // mm
+  buckleType  String?  // Deployant, Butterfly, etc.
+  price       Decimal  @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  watchConfigurations WatchConfiguration[]
+  
+  @@map("watch_straps")
+}
+
+model WatchConfiguration {
+  id          String   @id @default(cuid())
+  name        String
+  materialId  String
+  caseId      String
+  dialId      String
+  handsId     String
+  strapId     String
+  totalPrice  Decimal  @default(0)
+  description String?
+  
+  // 3D Configuration data
+  renderSettings Json?
+  previewUrl    String?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  material    WatchMaterial @relation(fields: [materialId], references: [id])
+  watchCase   WatchCase     @relation(fields: [caseId], references: [id])
+  watchDial   WatchDial     @relation(fields: [dialId], references: [id])
+  watchHands  WatchHands    @relation(fields: [handsId], references: [id])
+  watchStrap  WatchStrap    @relation(fields: [strapId], references: [id])
+  
+  // Customer relationship
+  customerId  String?
+  customer    Customer?     @relation(fields: [customerId], references: [id])
+  
+  @@unique([materialId, caseId, dialId, handsId, strapId])
+  @@map("watch_configurations")
+}
+
+// Customer & CRM Models
+model Customer {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  firstName        String
+  lastName         String
+  phone            String?
+  dateOfBirth      DateTime?
+  address          String?
+  city             String?
+  country          String?
+  postalCode       String?
+  
+  // Segmentation
+  segment          CustomerSegment @default(LOW)
+  lifetimeValue    Decimal @default(0)
+  totalOrders      Int     @default(0)
+  averageOrderValue Decimal @default(0)
+  
+  // CRM Data
+  lastPurchase     DateTime?
+  preferredContact CommunicationPreference @default(EMAIL)
+  status           CustomerStatus @default(ACTIVE)
+  
+  // Timestamps
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relationships
+  orders           Order[]
+  opportunities    SalesOpportunity[]
+  interactions     CustomerInteraction[]
+  configurations   WatchConfiguration[]
+  
+  @@map("customers")
+}
+
+model SalesOpportunity {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  value         Decimal
+  stage         OpportunityStage @default(PROSPECT)
+  probability   Int      @default(50) // 0-100
+  expectedClose DateTime?
+  actualClose   DateTime?
+  source        String?  // Lead source
+  notes         String?
+  
+  // Relationships
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  assignedTo    String?  // User ID or name
+  campaigns     CampaignOpportunity[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  @@map("sales_opportunities")
+}
+
+model CustomerInteraction {
+  id          String   @id @default(cuid())
+  type        InteractionType
+  subject     String
+  description String?
+  channel     CommunicationChannel @default(EMAIL)
+  status      InteractionStatus @default(COMPLETED)
+  
+  // Relationships
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  userId      String?  // Who handled this interaction
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("customer_interactions")
+}
+
+model Campaign {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  type        CampaignType
+  status      CampaignStatus @default(DRAFT)
+  
+  // Timing
+  startDate   DateTime
+  endDate     DateTime?
+  
+  // Targeting
+  targetSegment CustomerSegment?
+  targetCriteria Json?  // Complex targeting rules
+  
+  // Metrics
+  budget      Decimal?
+  spent       Decimal @default(0)
+  
+  // Content
+  subject     String?
+  content     String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  opportunities CampaignOpportunity[]
+  
+  @@map("campaigns")
+}
+
+model CampaignOpportunity {
+  id         String @id @default(cuid())
+  campaignId String
+  opportunityId String
+  
+  campaign   Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  opportunity SalesOpportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  
+  @@unique([campaignId, opportunityId])
+  @@map("campaign_opportunities")
+}
+
+// E-commerce Models
+model Order {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique
+  status        OrderStatus @default(PENDING)
+  
+  // Customer
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id])
+  
+  // Pricing
+  subtotal      Decimal
+  tax           Decimal @default(0)
+  shipping      Decimal @default(0)
+  discount      Decimal @default(0)
+  total         Decimal
+  
+  // Shipping
+  shippingAddress String?
+  billingAddress  String?
+  trackingNumber  String?
+  
+  // Payment
+  paymentStatus  PaymentStatus @default(PENDING)
+  paymentMethod  String?
+  stripePaymentIntentId String?
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relationships
+  items         OrderItem[]
+  
+  @@map("orders")
+}
+
+model OrderItem {
+  id      String @id @default(cuid())
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  // Product
+  productId String?
+  variantId String?
+  configurationId String?
+  
+  // Pricing
+  unitPrice Decimal
+  quantity  Int
+  total     Decimal
+  
+  // Product details at time of order
+  productName String
+  productSku  String?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("order_items")
+}
+
+// Chat & AI Models
+model ChatSession {
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String   @unique
+  provider  String   // OpenAI, Anthropic, etc.
+  status    ChatStatus @default(ACTIVE)
+  
+  // Settings
+  model     String?
+  temperature Float?  @default(0.7)
+  maxTokens  Int?     @default(1000)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relationships
+  messages  ChatMessage[]
+  
+  @@map("chat_sessions")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  
+  role      MessageRole
+  content   String
+  metadata  Json?    // Additional data like tokens, cost, etc.
+  
+  createdAt DateTime @default(now())
+  
+  @@map("chat_messages")
+}
+
+model AIProvider {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  type        ProviderType
+  status      ProviderStatus @default(ACTIVE)
+  config      Json?    // Provider-specific configuration
+  
+  // Performance metrics
+  uptime      Float    @default(100)
+  avgResponseTime Float? // milliseconds
+  successRate Float    @default(100)
+  totalRequests Int    @default(0)
+  failedRequests Int   @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  settings    ProviderSetting[]
+  
+  @@map("ai_providers")
+}
+
+model ProviderSetting {
+  id         String @id @default(cuid())
+  providerId String
+  provider   AIProvider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  
+  key        String
+  value      String
+  dataType   String @default("string") // string, number, boolean, json
+  
+  description String?
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@unique([providerId, key])
+  @@map("provider_settings")
+}
+
+// Blog & Content Models
+model BlogCategory {
+  id          String @id @default(cuid())
+  name        String @unique
+  slug        String @unique
+  description String?
+  color       String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relationships
+  posts       BlogPost[]
+  
+  @@map("blog_categories")
+}
+
+model BlogPost {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  excerpt     String?
+  content     String
+  featuredImage String?
+  
+  // SEO
+  metaTitle   String?
+  metaDescription String?
+  keywords    String?
+  
+  // Publishing
+  status      PostStatus @default(DRAFT)
+  publishedAt DateTime?
+  author      String?    // Author name or ID
+  
+  // Relationships
+  categoryId  String
+  category    BlogCategory @relation(fields: [categoryId], references: [id])
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("blog_posts")
+}
+
+// Settings & Configuration
+model AppSetting {
+  id        String @id @default(cuid())
+  key       String @unique
+  value     String
+  category  String @default("general")
+  dataType  String @default("string")
+  description String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("app_settings")
+}
+
+// Audit Trail
+model AuditLog {
+  id        String   @id @default(cuid())
+  entity    String   // Table or entity name
+  entityId  String   // Record ID
+  action    String   // CREATE, UPDATE, DELETE
+  oldData   Json?
+  newData   Json?
+  userId    String?  // User who made the change
+  ipAddress String?
+  userAgent String?
+  
+  createdAt DateTime @default(now())
+  
+  @@map("audit_logs")
+}
+
+// Enums
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum MaterialType {
+  METAL
+  CERAMIC
+  LEATHER
+  RUBBER
+  TEXTILE
+  PRECIOUS_METAL
+  EXOTIC
+}
+
+enum StrapType {
+  LEATHER
+  METAL
+  RUBBER
+  NATO
+  PERLON
+  CLOTH
+}
+
+enum CustomerSegment {
+  VIP
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum CommunicationPreference {
+  EMAIL
+  SMS
+  PHONE
+  WHATSAPP
+}
+
+enum OpportunityStage {
+  PROSPECT
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum InteractionType {
+  EMAIL
+  CALL
+  MEETING
+  CHAT
+  PURCHASE
+  SUPPORT
+}
+
+enum CommunicationChannel {
+  EMAIL
+  SMS
+  PHONE
+  WHATSAPP
+  CHAT
+  IN_PERSON
+}
+
+enum InteractionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum CampaignType {
+  EMAIL
+  SMS
+  SOCIAL
+  SEARCH
+  DISPLAY
+  INFLUENCER
+  REFERRAL
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum ChatStatus {
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+  ERROR
+}
+
+enum ProviderType {
+  OPENAI
+  ANTHROPIC
+  GOOGLE
+  HUGGINGFACE
+  CUSTOM
+}
+
+enum ProviderStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  ERROR
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
