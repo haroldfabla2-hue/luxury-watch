@@ -895,3 +895,6 @@
 # uploads/
 # downloads/
 
+# User input files (excluir como solicitado)
+user_input_files/
+
