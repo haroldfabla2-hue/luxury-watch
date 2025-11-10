@@ -1,240 +1,403 @@
 import { create } from 'zustand'
+import api from '../lib/api'
 
-// Types
-export interface Material {
-  id: number
+// Types actualizados para el nuevo backend
+export interface WatchMaterial {
+  id: string
   name: string
-  description: string
-  material_type: string
-  color_hex: string
-  price: string
-  image_url: string | null
-  specifications: any
+  type: 'METAL' | 'CERAMIC' | 'LEATHER' | 'RUBBER' | 'TEXTILE' | 'PRECIOUS_METAL' | 'EXOTIC'
+  price: number
+  density?: number
+  color?: string
+  finish?: string
+  description?: string
+  properties?: any
+  createdAt: string
+  updatedAt: string
 }
 
 export interface WatchCase {
-  id: number
+  id: string
   name: string
-  description: string
-  material_id: number
   shape: string
-  color_hex: string
-  size_mm: string
-  price: string
-  image_url: string | null
-  specifications: any
+  diameter: number
+  thickness: number
+  lugWidth?: number
+  materialId: string
+  price: number
+  waterResistance?: number
+  crystal?: string
+  description?: string
+  material?: WatchMaterial
+  createdAt: string
+  updatedAt: string
 }
 
 export interface WatchDial {
-  id: number
+  id: string
   name: string
-  description: string
-  style_category: string
-  color_hex: string
-  pattern_type: string
-  price: string
-  image_url: string | null
-  material_id: number
-  specifications: any
+  color: string
+  finish?: string
+  hourMarkers: string
+  materialId?: string
+  material?: WatchMaterial
+  price: number
+  description?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface WatchHands {
-  id: number
+  id: string
   name: string
-  description: string
   style: string
   color: string
-  material_type: string
-  size_mm: string
-  price: string
-  image_url: string | null
-  specifications: any
+  size: string
+  materialId?: string
+  material?: WatchMaterial
+  price: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface WatchStrap {
-  id: number
+  id: string
   name: string
-  description: string
-  material_type: string
+  type: 'LEATHER' | 'METAL' | 'RUBBER' | 'NATO' | 'PERLON' | 'CLOTH'
+  materialId?: string
+  material?: WatchMaterial
   color: string
-  style: string
-  buckle_type: string
-  price: string
-  image_url: string | null
-  specifications: any
+  width: number
+  length?: number
+  buckleType?: string
+  price: number
+  createdAt: string
+  updatedAt: string
 }
 
 export interface WatchConfiguration {
-  case: WatchCase | null
-  dial: WatchDial | null
-  hands: WatchHands | null
-  strap: WatchStrap | null
-  material: Material | null
-}
-
-export interface CartItem {
   id: string
-  configuration: WatchConfiguration
-  quantity: number
+  name: string
+  materialId: string
+  caseId: string
+  dialId: string
+  handsId: string
+  strapId: string
   totalPrice: number
-  savedAt: string
+  description?: string
+  renderSettings?: any
+  previewUrl?: string
+  createdAt: string
+  updatedAt: string
+  // Relaciones
+  material?: WatchMaterial
+  watchCase?: WatchCase
+  watchDial?: WatchDial
+  watchHands?: WatchHands
+  watchStrap?: WatchStrap
 }
 
-interface ConfiguratorStore {
-  // Configuration state
-  currentConfiguration: WatchConfiguration
-  
-  // Available options
-  materials: Material[]
+interface ConfiguratorState {
+  // Estado de carga
+  loading: boolean
+  error: string | null
+
+  // Componentes disponibles
+  materials: WatchMaterial[]
   cases: WatchCase[]
   dials: WatchDial[]
   hands: WatchHands[]
   straps: WatchStrap[]
-  
-  // Cart state
-  cart: CartItem[]
-  
-  // Actions
-  setMaterial: (material: Material) => void
-  setCase: (watchCase: WatchCase) => void
-  setDial: (dial: WatchDial) => void
-  setHands: (hands: WatchHands) => void
-  setStrap: (strap: WatchStrap) => void
-  
-  // Options loading
-  setMaterials: (materials: Material[]) => void
-  setCases: (cases: WatchCase[]) => void
-  setDials: (dials: WatchDial[]) => void
-  setHandsOptions: (hands: WatchHands[]) => void
-  setStraps: (straps: WatchStrap[]) => void
-  
-  // Cart actions
-  addToCart: () => void
-  removeFromCart: (id: string) => void
-  updateCartItemQuantity: (id: string, quantity: number) => void
-  clearCart: () => void
-  
-  // Computed
-  getTotalPrice: () => number
-  getCartTotal: () => number
-  getCartItemCount: () => number
-  
-  // Reset
-  resetConfiguration: () => void
+
+  // Configuración actual
+  selectedMaterial: WatchMaterial | null
+  selectedCase: WatchCase | null
+  selectedDial: WatchDial | null
+  selectedHands: WatchHands | null
+  selectedStrap: WatchStrap | null
+
+  // Configuración completa
+  currentConfiguration: WatchConfiguration | null
+  isValidConfiguration: boolean
+  totalPrice: number
+
+  // Configuraciones guardadas
+  savedConfigurations: WatchConfiguration[]
+
+  // Acciones
+  fetchComponents: () => Promise<void>
+  selectMaterial: (material: WatchMaterial) => void
+  selectCase: (watchCase: WatchCase) => void
+  selectDial: (dial: WatchDial) => void
+  selectHands: (hands: WatchHands) => void
+  selectStrap: (strap: WatchStrap) => void
+  validateConfiguration: () => Promise<boolean>
+  calculatePrice: () => Promise<number>
+  saveConfiguration: (name: string, description?: string) => Promise<string>
+  loadConfiguration: (id: string) => Promise<void>
+  clearConfiguration: () => void
+  resetStore: () => void
 }
 
-const initialConfiguration: WatchConfiguration = {
-  case: null,
-  dial: null,
-  hands: null,
-  strap: null,
-  material: null,
-}
+export const useConfiguratorStore = create<ConfiguratorState>((set, get) => ({
+  // Estado inicial
+  loading: false,
+  error: null,
 
-export const useConfiguratorStore = create<ConfiguratorStore>()((set, get) => ({
-  // Initial state
-  currentConfiguration: initialConfiguration,
   materials: [],
   cases: [],
   dials: [],
   hands: [],
   straps: [],
-  cart: [],
 
-  // Configuration actions
-  setMaterial: (material) =>
-    set((state) => ({
-      currentConfiguration: { ...state.currentConfiguration, material },
-    })),
+  selectedMaterial: null,
+  selectedCase: null,
+  selectedDial: null,
+  selectedHands: null,
+  selectedStrap: null,
 
-  setCase: (watchCase) =>
-    set((state) => ({
-      currentConfiguration: { ...state.currentConfiguration, case: watchCase },
-    })),
+  currentConfiguration: null,
+  isValidConfiguration: false,
+  totalPrice: 0,
 
-  setDial: (dial) =>
-    set((state) => ({
-      currentConfiguration: { ...state.currentConfiguration, dial },
-    })),
+  savedConfigurations: [],
 
-  setHands: (hands) =>
-    set((state) => ({
-      currentConfiguration: { ...state.currentConfiguration, hands },
-    })),
-
-  setStrap: (strap) =>
-    set((state) => ({
-      currentConfiguration: { ...state.currentConfiguration, strap },
-    })),
-
-  // Options loading
-  setMaterials: (materials) => set({ materials }),
-  setCases: (cases) => set({ cases }),
-  setDials: (dials) => set({ dials }),
-  setHandsOptions: (hands) => set({ hands }),
-  setStraps: (straps) => set({ straps }),
-
-  // Cart actions
-  addToCart: () => {
-    const { currentConfiguration } = get()
-    const totalPrice = get().getTotalPrice()
-    
-    if (!currentConfiguration.case || !currentConfiguration.dial) {
-      alert('Por favor selecciona al menos una caja y una esfera')
-      return
+  // Acciones
+  fetchComponents: async () => {
+    try {
+      set({ loading: true, error: null })
+      
+      const response = await api.getWatchComponents()
+      
+      if (response.success) {
+        set({
+          materials: response.data.materials || [],
+          cases: response.data.cases || [],
+          dials: response.data.dials || [],
+          hands: response.data.hands || [],
+          straps: response.data.straps || []
+        })
+      } else {
+        throw new Error('Error cargando componentes')
+      }
+    } catch (error) {
+      console.error('Error cargando componentes:', error)
+      set({ error: 'Error cargando componentes del configurador' })
+    } finally {
+      set({ loading: false })
     }
+  },
 
-    const cartItem: CartItem = {
-      id: `config-${Date.now()}`,
-      configuration: currentConfiguration,
-      quantity: 1,
-      totalPrice,
-      savedAt: new Date().toISOString(),
+  selectMaterial: (material: WatchMaterial) => {
+    set({ selectedMaterial: material })
+    get().validateConfiguration()
+  },
+
+  selectCase: (watchCase: WatchCase) => {
+    set({ selectedCase: watchCase })
+    get().validateConfiguration()
+  },
+
+  selectDial: (dial: WatchDial) => {
+    set({ selectedDial: dial })
+    get().validateConfiguration()
+  },
+
+  selectHands: (hands: WatchHands) => {
+    set({ selectedHands: hands })
+    get().validateConfiguration()
+  },
+
+  selectStrap: (strap: WatchStrap) => {
+    set({ selectedStrap: strap })
+    get().validateConfiguration()
+  },
+
+  validateConfiguration: async () => {
+    try {
+      const { selectedMaterial, selectedCase, selectedDial, selectedHands, selectedStrap } = get()
+      
+      if (!selectedMaterial || !selectedCase || !selectedDial || !selectedHands || !selectedStrap) {
+        set({ isValidConfiguration: false, totalPrice: 0 })
+        return false
+      }
+
+      const config = {
+        materialId: selectedMaterial.id,
+        caseId: selectedCase.id,
+        dialId: selectedDial.id,
+        handsId: selectedHands.id,
+        strapId: selectedStrap.id
+      }
+
+      const response = await api.validateConfiguration(config)
+      
+      if (response.success) {
+        set({ 
+          isValidConfiguration: response.data.valid,
+          totalPrice: response.data.price || 0
+        })
+        return response.data.valid
+      } else {
+        set({ isValidConfiguration: false, totalPrice: 0 })
+        return false
+      }
+    } catch (error) {
+      console.error('Error validando configuración:', error)
+      set({ isValidConfiguration: false, totalPrice: 0 })
+      return false
     }
-
-    set((state) => ({
-      cart: [...state.cart, cartItem],
-    }))
   },
 
-  removeFromCart: (id) =>
-    set((state) => ({
-      cart: state.cart.filter((item) => item.id !== id),
-    })),
+  calculatePrice: async () => {
+    try {
+      const { selectedMaterial, selectedCase, selectedDial, selectedHands, selectedStrap } = get()
+      
+      if (!selectedMaterial || !selectedCase || !selectedDial || !selectedHands || !selectedStrap) {
+        return 0
+      }
 
-  updateCartItemQuantity: (id, quantity) =>
-    set((state) => ({
-      cart: state.cart.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      ),
-    })),
+      const config = {
+        materialId: selectedMaterial.id,
+        caseId: selectedCase.id,
+        dialId: selectedDial.id,
+        handsId: selectedHands.id,
+        strapId: selectedStrap.id
+      }
 
-  clearCart: () => set({ cart: [] }),
-
-  // Computed values
-  getTotalPrice: () => {
-    const { currentConfiguration } = get()
-    let total = 0
-
-    if (currentConfiguration.material) total += parseFloat(currentConfiguration.material.price)
-    if (currentConfiguration.case) total += parseFloat(currentConfiguration.case.price)
-    if (currentConfiguration.dial) total += parseFloat(currentConfiguration.dial.price)
-    if (currentConfiguration.hands) total += parseFloat(currentConfiguration.hands.price)
-    if (currentConfiguration.strap) total += parseFloat(currentConfiguration.strap.price)
-
-    return total
+      const response = await api.calculateConfigurationPrice(config)
+      
+      if (response.success) {
+        const price = response.data.price || 0
+        set({ totalPrice: price })
+        return price
+      } else {
+        return 0
+      }
+    } catch (error) {
+      console.error('Error calculando precio:', error)
+      return 0
+    }
   },
 
-  getCartTotal: () => {
-    const { cart } = get()
-    return cart.reduce((total, item) => total + item.totalPrice * item.quantity, 0)
+  saveConfiguration: async (name: string, description?: string) => {
+    try {
+      const { selectedMaterial, selectedCase, selectedDial, selectedHands, selectedStrap } = get()
+      
+      if (!selectedMaterial || !selectedCase || !selectedDial || !selectedHands || !selectedStrap) {
+        throw new Error('Configuración incompleta')
+      }
+
+      const config = {
+        name,
+        description,
+        materialId: selectedMaterial.id,
+        caseId: selectedCase.id,
+        dialId: selectedDial.id,
+        handsId: selectedHands.id,
+        strapId: selectedStrap.id,
+        totalPrice: get().totalPrice
+      }
+
+      const response = await api.saveConfiguration(config)
+      
+      if (response.success) {
+        // Actualizar configuración actual
+        set({ currentConfiguration: response.data })
+        
+        // Agregar a configuraciones guardadas
+        const { savedConfigurations } = get()
+        set({ 
+          savedConfigurations: [response.data, ...savedConfigurations]
+        })
+        
+        return response.data.id
+      } else {
+        throw new Error(response.message || 'Error guardando configuración')
+      }
+    } catch (error) {
+      console.error('Error guardando configuración:', error)
+      throw error
+    }
   },
 
-  getCartItemCount: () => {
-    const { cart } = get()
-    return cart.reduce((count, item) => count + item.quantity, 0)
+  loadConfiguration: async (id: string) => {
+    try {
+      set({ loading: true, error: null })
+      
+      // Cargar configuración desde API
+      const response = await api.request(`/api/configurations/${id}`)
+      
+      if (response.success) {
+        const config = response.data
+        
+        // Encontrar los componentes en el store
+        const { materials, cases, dials, hands, straps } = get()
+        
+        const material = materials.find(m => m.id === config.materialId)
+        const watchCase = cases.find(c => c.id === config.caseId)
+        const dial = dials.find(d => d.id === config.dialId)
+        const hand = hands.find(h => h.id === config.handsId)
+        const strap = straps.find(s => s.id === config.strapId)
+        
+        if (material && watchCase && dial && hand && strap) {
+          set({
+            selectedMaterial: material,
+            selectedCase: watchCase,
+            selectedDial: dial,
+            selectedHands: hand,
+            selectedStrap: strap,
+            currentConfiguration: config,
+            isValidConfiguration: true,
+            totalPrice: config.totalPrice
+          })
+        } else {
+          throw new Error('Componentes no encontrados para esta configuración')
+        }
+      } else {
+        throw new Error('Configuración no encontrada')
+      }
+    } catch (error) {
+      console.error('Error cargando configuración:', error)
+      set({ error: 'Error cargando configuración' })
+    } finally {
+      set({ loading: false })
+    }
   },
 
-  // Reset
-  resetConfiguration: () => set({ currentConfiguration: initialConfiguration }),
+  clearConfiguration: () => {
+    set({
+      selectedMaterial: null,
+      selectedCase: null,
+      selectedDial: null,
+      selectedHands: null,
+      selectedStrap: null,
+      currentConfiguration: null,
+      isValidConfiguration: false,
+      totalPrice: 0
+    })
+  },
+
+  resetStore: () => {
+    set({
+      loading: false,
+      error: null,
+      materials: [],
+      cases: [],
+      dials: [],
+      hands: [],
+      straps: [],
+      selectedMaterial: null,
+      selectedCase: null,
+      selectedDial: null,
+      selectedHands: null,
+      selectedStrap: null,
+      currentConfiguration: null,
+      isValidConfiguration: false,
+      totalPrice: 0,
+      savedConfigurations: []
+    })
+  }
 }))
+
+export default useConfiguratorStore

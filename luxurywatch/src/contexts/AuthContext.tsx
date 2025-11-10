@@ -1,15 +1,39 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabaseClient'
+import api from '../lib/api'
+
+// Tipos para el nuevo sistema de autenticación
+interface User {
+  id: string
+  email: string
+  firstName: string
+  lastName: string
+  role: 'admin' | 'manager' | 'sales' | 'user'
+  phone?: string
+  address?: string
+  city?: string
+  country?: string
+  createdAt: string
+  updatedAt: string
+}
+
+interface Session {
+  token: string
+  user: User
+  expiresAt: number
+}
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signUp: (email: string, password: string, name: string) => Promise<void>
+  signUp: (email: string, password: string, userData: { firstName: string; lastName: string; phone?: string }) => Promise<void>
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
+  isAdmin: () => boolean
+  isManager: () => boolean
+  isSales: () => boolean
+  hasRole: (role: string) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,76 +52,135 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
+    // Verificar si hay un token almacenado
+    const checkAuth = async () => {
+      try {
+        if (api.isAuthenticated()) {
+          const response = await api.getCurrentUser()
+          if (response.success && response.user) {
+            setUser(response.user)
+            setSession({
+              token: api.token,
+              user: response.user,
+              expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error verificando autenticación:', error)
+        // Token inválido, limpiar
+        api.clearToken()
+      } finally {
+        setLoading(false)
+      }
+    }
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      setUser(session?.user ?? null)
-    })
-
-    return () => subscription.unsubscribe()
+    checkAuth()
   }, [])
 
-  const signUp = async (email: string, password: string, name: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-        },
-      },
-    })
+  const signUp = async (email: string, password: string, userData: { firstName: string; lastName: string; phone?: string }) => {
+    try {
+      setLoading(true)
+      const response = await api.register({
+        email,
+        password,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        phone: userData.phone
+      })
 
-    if (error) throw error
-
-    // Create user profile
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert([
-          {
-            user_id: data.user.id,
-            email: email,
-            full_name: name,
-          },
-        ])
-
-      if (profileError) throw profileError
+      if (response.success) {
+        setUser(response.user)
+        setSession({
+          token: response.token,
+          user: response.user,
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+        })
+      } else {
+        throw new Error(response.message || 'Error en el registro')
+      }
+    } catch (error) {
+      console.error('Error en registro:', error)
+      throw error
+    } finally {
+      setLoading(false)
     }
   }
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      setLoading(true)
+      const response = await api.login(email, password)
 
-    if (error) throw error
+      if (response.success) {
+        setUser(response.user)
+        setSession({
+          token: response.token,
+          user: response.user,
+          expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+        })
+      } else {
+        throw new Error(response.message || 'Credenciales inválidas')
+      }
+    } catch (error) {
+      console.error('Error en login:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
   }
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut()
-    if (error) throw error
+    try {
+      setLoading(true)
+      await api.logout()
+      setUser(null)
+      setSession(null)
+    } catch (error) {
+      console.error('Error en logout:', error)
+      // Incluso si hay error, limpiar localmente
+      setUser(null)
+      setSession(null)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const resetPassword = async (email: string) => {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    })
-
-    if (error) throw error
+    try {
+      // En el futuro implementar endpoint de reset password
+      const response = await api.request('/api/auth/reset-password', {
+        method: 'POST',
+        body: { email }
+      })
+      
+      if (!response.success) {
+        throw new Error(response.message || 'Error enviando email de reset')
+      }
+    } catch (error) {
+      console.error('Error en reset password:', error)
+      throw error
+    }
   }
 
-  const value = {
+  // Funciones de utilidad para roles
+  const isAdmin = () => {
+    return user?.role === 'admin'
+  }
+
+  const isManager = () => {
+    return user?.role === 'manager'
+  }
+
+  const isSales = () => {
+    return user?.role === 'sales'
+  }
+
+  const hasRole = (role: string) => {
+    return user?.role === role
+  }
+
+  const value: AuthContextType = {
     user,
     session,
     loading,
@@ -105,6 +188,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signIn,
     signOut,
     resetPassword,
+    isAdmin,
+    isManager,
+    isSales,
+    hasRole,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
