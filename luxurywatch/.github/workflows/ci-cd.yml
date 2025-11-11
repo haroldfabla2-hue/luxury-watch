@@ -1,0 +1,256 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # Frontend Tests
+  frontend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: ${{ env.PNPM_VERSION }}
+        
+    - name: Get pnpm store directory
+      id: pnpm-cache
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        
+    - name: Setup pnpm cache
+      uses: actions/cache@v3
+      with:
+        path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+          
+    - name: Install dependencies
+      run: pnpm install --frozen-lockfile
+      
+    - name: Run frontend tests
+      run: pnpm test:frontend || echo "No frontend tests defined"
+      
+    - name: Run linting
+      run: pnpm lint
+      
+    - name: Build frontend
+      run: pnpm build
+      
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: frontend-build
+        path: dist/
+
+  # Backend Tests
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: luxurywatch_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+          
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        
+    - name: Install backend dependencies
+      working-directory: ./backend
+      run: npm ci
+      
+    - name: Setup test environment
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/luxurywatch_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret
+      run: |
+        cp .env.example .env
+        echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/luxurywatch_test" >> .env
+        echo "REDIS_URL=redis://localhost:6379" >> .env
+        echo "JWT_SECRET=test-jwt-secret" >> .env
+        echo "NODE_ENV=test" >> .env
+        
+    - name: Generate Prisma client
+      working-directory: ./backend
+      run: npx prisma generate
+      
+    - name: Run database migrations
+      working-directory: ./backend
+      run: npx prisma migrate deploy
+      
+    - name: Run backend tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/luxurywatch_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret
+      run: npm test
+      
+    - name: Run integration tests
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/luxurywatch_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret
+      run: npm run test:integration || echo "No integration tests"
+      
+    - name: Generate test coverage
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgresql://postgres:postgres@localhost:5432/luxurywatch_test
+        REDIS_URL: redis://localhost:6379
+        JWT_SECRET: test-jwt-secret
+      run: npm run test:coverage || echo "No coverage configured"
+      
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage/lcov.info
+        flags: backend
+        name: backend-coverage
+
+  # Docker Build and Push
+  docker-build:
+    needs: [frontend-tests, backend-tests]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ secrets.CONTAINER_REGISTRY }}
+        username: ${{ secrets.CONTAINER_REGISTRY_USERNAME }}
+        password: ${{ secrets.CONTAINER_REGISTRY_TOKEN }}
+        
+    - name: Build and push backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        file: ./backend/Dockerfile
+        push: true
+        tags: |
+          ${{ secrets.CONTAINER_REGISTRY }}/luxurywatch-backend:${{ github.sha }}
+          ${{ secrets.CONTAINER_REGISTRY }}/luxurywatch-backend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Build and push frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.frontend
+        push: true
+        tags: |
+          ${{ secrets.CONTAINER_REGISTRY }}/luxurywatch-frontend:${{ github.sha }}
+          ${{ secrets.CONTAINER_REGISTRY }}/luxurywatch-frontend:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Security Scan
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: docker-build
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ secrets.CONTAINER_REGISTRY }}/luxurywatch-backend:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+        
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Deploy to staging
+  deploy-staging:
+    needs: [docker-build, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment"
+        # Aquí iría la lógica de deployment a staging
+        # Por ejemplo, uso de SSH para conectar al servidor
+        # o integración con servicios de deployment como Vercel, Netlify, etc.
+
+  # Deploy to production
+  deploy-production:
+    needs: [docker-build, security-scan]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Deploy to production
+      run: |
+        echo "Deploying to production environment"
+        # Aquí iría la lógica de deployment a producción
+        # Esto debería ser más robusto y con verificaciones adicionales

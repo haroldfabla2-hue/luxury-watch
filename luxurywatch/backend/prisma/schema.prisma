@@ -66,6 +66,9 @@ model Product {
   @@index([sku])
   @@index([status])
   @@index([isFeatured])
+  @@index([categoryId, status])
+  @@index([status, isFeatured])
+  @@index([createdAt])
 }
 
 enum ProductType {
@@ -519,6 +522,10 @@ model Customer {
   @@index([customerType])
   @@index([status])
   @@index([lastOrderDate])
+  @@index([status, customerType])
+  @@index([customerType, lastOrderDate])
+  @@index([createdAt])
+  @@map("customers")
 }
 
 enum CustomerType {

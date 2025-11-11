@@ -1,0 +1,1552 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "LuxuryWatch API",
+    "description": "API para plataforma de e-commerce de relojes de lujo con configurador 3D, CRM y chat IA",
+    "version": "1.0.0",
+    "contact": {
+      "name": "MiniMax Agent",
+      "email": "support@luxurywatch.com"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3001/api",
+      "description": "Servidor de desarrollo"
+    },
+    {
+      "url": "https://api.luxurywatch.com/api",
+      "description": "Servidor de producción"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": false
+          },
+          "error": {
+            "type": "string",
+            "description": "Mensaje de error"
+          },
+          "details": {
+            "type": "object",
+            "description": "Detalles adicionales del error"
+          }
+        }
+      },
+      "Product": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID único del producto"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre del producto"
+          },
+          "description": {
+            "type": "string",
+            "description": "Descripción del producto"
+          },
+          "price": {
+            "type": "number",
+            "format": "float",
+            "description": "Precio del producto"
+          },
+          "category": {
+            "type": "string",
+            "description": "Categoría del producto"
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "URLs de imágenes del producto"
+          },
+          "specifications": {
+            "type": "object",
+            "description": "Especificaciones técnicas del producto"
+          },
+          "inStock": {
+            "type": "boolean",
+            "description": "Disponibilidad del producto"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Customer": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "ID único del cliente"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Email del cliente"
+          },
+          "name": {
+            "type": "string",
+            "description": "Nombre completo del cliente"
+          },
+          "phone": {
+            "type": "string",
+            "description": "Teléfono del cliente"
+          },
+          "preferences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Preferencias del cliente"
+          },
+          "orders": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Order"
+            },
+            "description": "Órdenes del cliente"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "customerId": {
+            "type": "integer"
+          },
+          "productId": {
+            "type": "integer"
+          },
+          "quantity": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "number",
+            "format": "float"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "confirmed", "shipped", "delivered", "cancelled"]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "message": {
+            "type": "string",
+            "description": "Mensaje del usuario"
+          },
+          "response": {
+            "type": "string",
+            "description": "Respuesta del sistema"
+          },
+          "userId": {
+            "type": "integer"
+          },
+          "sessionId": {
+            "type": "string",
+            "description": "ID de sesión de chat"
+          },
+          "provider": {
+            "type": "string",
+            "enum": ["openai", "gemini", "anthropic", "fallback"],
+            "description": "Proveedor de IA utilizado"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PaginatedResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array"
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer"
+              },
+              "total": {
+                "type": "integer"
+              },
+              "pages": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health check del servidor",
+        "description": "Endpoint para verificar el estado del servidor",
+        "tags": ["Health"],
+        "responses": {
+          "200": {
+            "description": "Servidor funcionando correctamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "healthy"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "uptime": {
+                      "type": "number",
+                      "description": "Tiempo de actividad en segundos"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/info": {
+      "get": {
+        "summary": "Información de la API",
+        "description": "Obtener información general sobre la API",
+        "tags": ["API"],
+        "responses": {
+          "200": {
+            "description": "Información de la API",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "example": "LuxuryWatch API"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    },
+                    "description": {
+                      "type": "string",
+                      "example": "API para plataforma de e-commerce de relojes de lujo"
+                    },
+                    "endpoints": {
+                      "type": "object",
+                      "properties": {
+                        "products": {
+                          "type": "string",
+                          "example": "/api/products"
+                        },
+                        "crm": {
+                          "type": "string",
+                          "example": "/api/crm"
+                        },
+                        "chat": {
+                          "type": "string",
+                          "example": "/api/chat"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products": {
+      "get": {
+        "summary": "Obtener productos",
+        "description": "Obtener lista de productos con filtros opcionales",
+        "tags": ["Products"],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "description": "Filtrar por categoría",
+            "schema": {
+              "type": "string",
+              "enum": ["luxury", "classic", "sport", "business"]
+            }
+          },
+          {
+            "name": "minPrice",
+            "in": "query",
+            "description": "Precio mínimo",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            }
+          },
+          {
+            "name": "maxPrice",
+            "in": "query",
+            "description": "Precio máximo",
+            "schema": {
+              "type": "number",
+              "format": "float"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número máximo de resultados",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "Número de resultados a omitir",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de productos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Product"
+                      }
+                    },
+                    "count": {
+                      "type": "integer",
+                      "description": "Número total de productos"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear nuevo producto",
+        "description": "Crear un nuevo producto (requiere autenticación)",
+        "tags": ["Products"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "price", "category"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "description": {
+                    "type": "string",
+                    "maxLength": 1000
+                  },
+                  "price": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 0
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": ["luxury", "classic", "sport", "business"]
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "uri"
+                    }
+                  },
+                  "specifications": {
+                    "type": "object"
+                  },
+                  "inStock": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Producto creado exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/{id}": {
+      "get": {
+        "summary": "Obtener producto por ID",
+        "description": "Obtener un producto específico por su ID",
+        "tags": ["Products"],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del producto",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Producto encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Producto no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar producto",
+        "description": "Actualizar un producto existente (requiere autenticación)",
+        "tags": ["Products"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del producto",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "description": {
+                    "type": "string"
+                  },
+                  "price": {
+                    "type": "number",
+                    "format": "float"
+                  },
+                  "category": {
+                    "type": "string"
+                  },
+                  "images": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "specifications": {
+                    "type": "object"
+                  },
+                  "inStock": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Producto actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Product"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Producto no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar producto",
+        "description": "Eliminar un producto (requiere autenticación)",
+        "tags": ["Products"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del producto",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Producto eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Producto no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/products/categories": {
+      "get": {
+        "summary": "Obtener categorías",
+        "description": "Obtener lista de categorías de productos disponibles",
+        "tags": ["Products"],
+        "responses": {
+          "200": {
+            "description": "Lista de categorías",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "example": ["luxury", "classic", "sport", "business"]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/customers": {
+      "get": {
+        "summary": "Obtener clientes",
+        "description": "Obtener lista de clientes con paginación y búsqueda",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Número de página",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Elementos por página",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "description": "Término de búsqueda (nombre o email)",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista de clientes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "success": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    },
+                    {
+                      "$ref": "#/components/schemas/PaginatedResponse"
+                    }
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Customer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Crear cliente",
+        "description": "Crear un nuevo cliente",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "name"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "preferences": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Cliente creado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Customer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o email duplicado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/customers/{id}": {
+      "get": {
+        "summary": "Obtener cliente por ID",
+        "description": "Obtener un cliente específico con sus órdenes",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del cliente",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Customer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Cliente no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "Actualizar cliente",
+        "description": "Actualizar información de un cliente",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del cliente",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "phone": {
+                    "type": "string"
+                  },
+                  "preferences": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cliente actualizado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Customer"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar cliente",
+        "description": "Eliminar un cliente (soft delete)",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del cliente",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cliente eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "integer"
+                        },
+                        "deletedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/customers/{id}/orders": {
+      "get": {
+        "summary": "Obtener órdenes del cliente",
+        "description": "Obtener todas las órdenes de un cliente específico",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del cliente",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Órdenes del cliente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Order"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/crm/customers/{id}/stats": {
+      "get": {
+        "summary": "Estadísticas del cliente",
+        "description": "Obtener estadísticas y métricas de un cliente",
+        "tags": ["CRM"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "ID del cliente",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estadísticas del cliente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalOrders": {
+                          "type": "integer"
+                        },
+                        "totalSpent": {
+                          "type": "number",
+                          "format": "float"
+                        },
+                        "lastOrderDate": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "favoriteCategory": {
+                          "type": "string"
+                        },
+                        "avgOrderValue": {
+                          "type": "number",
+                          "format": "float"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/message": {
+      "post": {
+        "summary": "Enviar mensaje de chat",
+        "description": "Enviar un mensaje al chat IA para obtener respuesta",
+        "tags": ["Chat"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message", "userId"],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000,
+                    "description": "Mensaje del usuario"
+                  },
+                  "userId": {
+                    "type": "integer",
+                    "description": "ID del usuario"
+                  },
+                  "sessionId": {
+                    "type": "string",
+                    "description": "ID de sesión de chat"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Respuesta del chat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "content": {
+                          "type": "string",
+                          "description": "Respuesta del sistema"
+                        },
+                        "provider": {
+                          "type": "string",
+                          "enum": ["openai", "gemini", "anthropic", "fallback"]
+                        },
+                        "timestamp": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Datos inválidos o mensaje rechazado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit excedido",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": false
+                    },
+                    "error": {
+                      "type": "string",
+                      "example": "Rate limit exceeded. Try again later."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/history/{userId}": {
+      "get": {
+        "summary": "Obtener historial de chat",
+        "description": "Obtener historial de mensajes de chat de un usuario",
+        "tags": ["Chat"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "ID del usuario",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "sessionId",
+            "in": "query",
+            "description": "Filtrar por sesión específica",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Número máximo de mensajes",
+            "schema": {
+              "type": "integer",
+              "default": 50,
+              "maximum": 100
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historial de chat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChatMessage"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar historial de chat",
+        "description": "Eliminar todo el historial de chat de un usuario",
+        "tags": ["Chat"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "description": "ID del usuario",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historial eliminado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "deleted": {
+                          "type": "integer",
+                          "description": "Número de mensajes eliminados"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/analytics": {
+      "get": {
+        "summary": "Analytics de chat",
+        "description": "Obtener estadísticas y analytics del chat",
+        "tags": ["Chat"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Analytics de chat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalMessages": {
+                          "type": "integer"
+                        },
+                        "activeUsers": {
+                          "type": "integer"
+                        },
+                        "avgMessagesPerUser": {
+                          "type": "number",
+                          "format": "float"
+                        },
+                        "topProviders": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "provider": {
+                                "type": "string"
+                              },
+                              "count": {
+                                "type": "integer"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/chat/recommendation": {
+      "post": {
+        "summary": "Generar recomendación de producto",
+        "description": "Generar recomendaciones de productos basadas en preferencias del usuario",
+        "tags": ["Chat"],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["userId", "preferences"],
+                "properties": {
+                  "userId": {
+                    "type": "integer"
+                  },
+                  "preferences": {
+                    "type": "object",
+                    "properties": {
+                      "style": {
+                        "type": "string"
+                      },
+                      "budget": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "material": {
+                        "type": "string"
+                      },
+                      "features": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Recomendaciones generadas",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": {
+                      "type": "boolean",
+                      "example": true
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "recommendations": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "product": {
+                                "$ref": "#/components/schemas/Product"
+                              },
+                              "reason": {
+                                "type": "string"
+                              },
+                              "matchScore": {
+                                "type": "number",
+                                "format": "float",
+                                "minimum": 0,
+                                "maximum": 1
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

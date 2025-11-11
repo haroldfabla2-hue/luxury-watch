@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuxuryWatch API Documentation</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+  <style>
+    html {
+      box-sizing: border-box;
+      overflow: -moz-scrollbars-vertical;
+      overflow-y: scroll;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+    body {
+      margin: 0;
+      background: #fafafa;
+      font-family: 'Source Sans Pro', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .swagger-ui .topbar {
+      background-color: #1a1a1a;
+      border-bottom: 1px solid #333;
+      display: none;
+    }
+    .swagger-ui .info {
+      margin: 0;
+    }
+    .swagger-ui .scheme-container {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      padding: 15px 20px;
+      margin: 15px 0;
+    }
+    .swagger-ui .opblock-summary {
+      cursor: pointer;
+    }
+    .swagger-ui .opblock {
+      margin: 0 0 10px;
+      border: 1px solid #d0d0d0;
+      border-radius: 4px;
+      box-shadow: 0 0 3px rgba(0,0,0,.19);
+    }
+    .swagger-ui .response-col_description {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js" crossorigin></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js" crossorigin></script>
+  <script>
+    window.onload = function() {
+      const ui = SwaggerUIBundle({
+        url: './swagger.json',
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        validatorUrl: null,
+        tryItOutEnabled: true,
+        supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+        onComplete: function() {
+          console.log('Swagger UI loaded successfully');
+        },
+        onFailure: function(error) {
+          console.error('Failed to load Swagger UI:', error);
+        }
+      });
+      
+      window.ui = ui;
+    };
+  </script>
+</body>
+</html>
