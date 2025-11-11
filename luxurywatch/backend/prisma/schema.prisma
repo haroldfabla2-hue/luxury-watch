@@ -1,0 +1,889 @@
+// Schema de Prisma para LuxuryWatch CRM
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================
+// GESTIÓN DE PRODUCTOS
+// =====================================
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(255)
+  description String?  @db.Text
+  parentId    Int?
+  parent      Category? @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children    Category[] @relation("CategoryHierarchy")
+  imageUrl    String?  @db.VarChar(500)
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  products Product[]
+
+  @@index([parentId])
+  @@index([slug])
+  @@index([isActive])
+}
+
+model Product {
+  id                 String    @id @default(uuid())
+  name               String    @db.VarChar(255)
+  slug               String    @unique @db.VarChar(255)
+  description        String?   @db.Text
+  shortDescription   String?   @db.Text
+  sku                String?   @unique @db.VarChar(100)
+  categoryId         Int?
+  category           Category? @relation(fields: [categoryId], references: [id])
+  brand              String?   @db.VarChar(100)
+  productType        ProductType @default(CONFIGURABLE)
+  status             ProductStatus @default(DRAFT)
+  featuredImage      String?   @db.VarChar(500)
+  galleryImages      Json?     // Array de URLs
+  weight             Decimal?  @db.Decimal(10, 3)
+  dimensions         Json?     // {length, width, height}
+  metaTitle          String?   @db.VarChar(255)
+  metaDescription    String?   @db.Text
+  tags               Json?     // Array de tags
+  isFeatured         Boolean   @default(false)
+  isConfigurable     Boolean   @default(true) // Para productos como watches
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  variants     ProductVariant[]
+  images       ProductImage[]
+  attributes   ProductAttribute[]
+  watchConfig  WatchConfiguration?
+
+  @@index([categoryId])
+  @@index([sku])
+  @@index([status])
+  @@index([isFeatured])
+}
+
+enum ProductType {
+  SIMPLE
+  VARIABLE
+  CONFIGURABLE
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name          String   @db.VarChar(255)
+  sku           String?  @unique @db.VarChar(100)
+  price         Decimal  @db.Decimal(10, 2)
+  compareAtPrice Decimal? @db.Decimal(10, 2)
+  costPrice     Decimal? @db.Decimal(10, 2)
+  manageStock   Boolean  @default(true)
+  stockQuantity Int      @default(0)
+  stockStatus   StockStatus @default(IN_STOCK)
+  requiresShipping Boolean @default(true)
+  taxable       Boolean  @default(true)
+  weight        Decimal? @db.Decimal(10, 3)
+  dimensions    Json?    // {length, width, height}
+  imageUrl      String?  @db.VarChar(500)
+  isActive      Boolean  @default(true)
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Configuración 3D específica para watches
+  watchVariation WatchVariation?
+  
+  // Atributos de la variación
+  attributes   ProductVariantAttribute[]
+  
+  // Inventario
+  inventory    Inventory?
+  
+  // Imágenes de la variación
+  images       ProductImage[]
+
+  @@index([productId])
+  @@index([sku])
+  @@index([stockStatus])
+  @@index([isActive])
+}
+
+enum StockStatus {
+  IN_STOCK
+  OUT_OF_STOCK
+  ON_BACKORDER
+}
+
+// CONFIGURACIÓN ESPECÍFICA PARA WATCHES
+model WatchVariation {
+  id              String   @id @default(uuid())
+  variantId       String   @unique
+  variant         ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  
+  // Referencias a la configuración de watch
+  materialId      Int?
+  caseId          Int?
+  dialId          Int?
+  handsId         Int?
+  strapId         Int?
+  
+  material        WatchMaterial? @relation(fields: [materialId], references: [id])
+  case            WatchCase? @relation(fields: [caseId], references: [id])
+  dial            WatchDial? @relation(fields: [dialId], references: [id])
+  hands           WatchHands? @relation(fields: [handsId], references: [id])
+  strap           WatchStrap? @relation(fields: [strapId], references: [id])
+  
+  // Propiedades 3D
+  model3DUrl      String?  @db.VarChar(500)
+  previewImages   Json?    // Array de URLs de previews
+  priceModifier   Decimal  @db.Decimal(10, 2) @default(0)
+  isAvailable3D   Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+model WatchMaterial {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  type        WatchMaterialType
+  colorHex    String   @db.VarChar(7)
+  metalness   Decimal  @db.Decimal(3, 2) @default(0)
+  roughness   Decimal  @db.Decimal(3, 2) @default(0.5)
+  price       Decimal  @db.Decimal(10, 2) @default(0)
+  textureUrl  String?  @db.VarChar(500)
+  normalMapUrl String? @db.VarChar(500)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  cases       WatchCase[]
+  variations  WatchVariation[]
+
+  @@index([type])
+  @@index([isActive])
+}
+
+enum WatchMaterialType {
+  METAL
+  CERAMIC
+  TITANIUM
+  CARBON
+  RUBBER
+  LEATHER
+}
+
+model WatchCase {
+  id                 Int      @id @default(autoincrement())
+  name               String   @db.VarChar(100)
+  materialId         Int?
+  material           WatchMaterial? @relation(fields: [materialId], references: [id])
+  shape              WatchCaseShape
+  colorHex           String   @db.VarChar(7)
+  sizeMm             Int
+  thicknessMm        Decimal? @db.Decimal(4, 2)
+  waterResistance    String?  @db.VarChar(50)
+  price              Decimal  @db.Decimal(10, 2) @default(0)
+  model3DUrl         String?  @db.VarChar(500)
+  previewUrl         String?  @db.VarChar(500)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  variations         WatchVariation[]
+
+  @@index([materialId])
+  @@index([shape])
+  @@index([sizeMm])
+  @@index([isActive])
+}
+
+enum WatchCaseShape {
+  ROUND
+  SQUARE
+  CUSHION
+  TONNEAU
+}
+
+model WatchDial {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  styleCategory WatchDialStyle
+  colorHex      String   @db.VarChar(7)
+  patternType   WatchDialPattern
+  markers       String?  @db.Text
+  subdials      Json?    // Configuración de subdiales
+  price         Decimal  @db.Decimal(10, 2) @default(0)
+  textureUrl    String?  @db.VarChar(500)
+  previewUrl    String?  @db.VarChar(500)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  variations    WatchVariation[]
+
+  @@index([styleCategory])
+  @@index([patternType])
+  @@index([isActive])
+}
+
+enum WatchDialStyle {
+  CLASSIC
+  SPORT
+  MODERN
+  LUXURY
+}
+
+enum WatchDialPattern {
+  SUNBURST
+  GUILLOCHE
+  PLAIN
+  CARBON
+  TEXTURED
+}
+
+model WatchHands {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  style         WatchHandsStyle
+  color         String   @db.VarChar(50)
+  materialType  String?  @db.VarChar(50)
+  sizeMm        Decimal  @db.Decimal(4, 2)
+  luminous      Boolean  @default(false)
+  price         Decimal  @db.Decimal(10, 2) @default(0)
+  model3DUrl    String?  @db.VarChar(500)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  variations    WatchVariation[]
+
+  @@index([style])
+  @@index([luminous])
+  @@index([isActive])
+}
+
+enum WatchHandsStyle {
+  DAUPHINE
+  SWORD
+  BATON
+  ALPHA
+  SKELETON
+  LUME
+}
+
+model WatchStrap {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  materialType WatchStrapMaterial
+  color       String   @db.VarChar(50)
+  style       WatchStrapStyle
+  buckleType  WatchBuckleType
+  widthMm     Int
+  lengthMm    Int?
+  price       Decimal  @db.Decimal(10, 2) @default(0)
+  textureUrl  String?  @db.VarChar(500)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  variations  WatchVariation[]
+
+  @@index([materialType])
+  @@index([style])
+  @@index([buckleType])
+  @@index([widthMm])
+  @@index([isActive])
+}
+
+enum WatchStrapMaterial {
+  LEATHER
+  METAL
+  RUBBER
+  NATO
+  CANVAS
+}
+
+enum WatchStrapStyle {
+  CLASSIC
+  SPORT
+  LUXURY
+  MILITARY
+}
+
+enum WatchBuckleType {
+  PIN
+  DEPLOYMENT
+  FOLDING
+  VELCRO
+}
+
+// Configuraciones de producto personalizadas
+model WatchConfiguration {
+  id          String   @id @default(uuid())
+  productId   String   @unique
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Configuración por defecto o personalizada
+  defaultMaterialId     Int?
+  defaultCaseId         Int?
+  defaultDialId         Int?
+  defaultHandsId        Int?
+  defaultStrapId        Int?
+  
+  // Configuraciones disponibles
+  availableMaterials    Json?    // Array de material IDs
+  availableCases        Json?    // Array de case IDs
+  availableDials        Json?    // Array de dial IDs
+  availableHands        Json?    // Array de hand IDs
+  availableStraps       Json?    // Array de strap IDs
+  
+  // Restricciones de compatibilidad
+  materialCompatibilities Json?  // {materialId: [compatibleCaseIds]}
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([productId])
+}
+
+// =====================================
+// ATRIBUTOS Y VARIACIONES
+// =====================================
+
+model Attribute {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  slug        String   @unique @db.VarChar(100)
+  type        AttributeType
+  isRequired  Boolean  @default(false)
+  isVisible   Boolean  @default(true)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  values      AttributeValue[]
+  products    ProductAttribute[]
+  variants    ProductVariantAttribute[]
+}
+
+enum AttributeType {
+  TEXT
+  SELECT
+  MULTISELECT
+  BOOLEAN
+  NUMBER
+  DATE
+  COLOR
+  IMAGE
+}
+
+model AttributeValue {
+  id          Int      @id @default(autoincrement())
+  attributeId Int
+  attribute   Attribute @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  name        String   @db.VarChar(255)
+  slug        String   @db.VarChar(255)
+  value       String?  @db.Text
+  colorHex    String?  @db.VarChar(7)
+  imageUrl    String?  @db.VarChar(500)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([attributeId, slug])
+  @@index([attributeId])
+}
+
+model ProductAttribute {
+  id           Int      @id @default(autoincrement())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeId  Int
+  attribute    Attribute @relation(fields: [attributeId], references: [id])
+  isVariationAttribute Boolean @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([productId, attributeId])
+  @@index([productId])
+  @@index([attributeId])
+}
+
+model ProductVariantAttribute {
+  id           Int      @id @default(autoincrement())
+  variantId    String
+  variant      ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  attributeId  Int
+  attribute    Attribute @relation(fields: [attributeId], references: [id])
+  valueId      Int?
+  value        AttributeValue? @relation(fields: [valueId], references: [id])
+  valueText    String?  @db.Text
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([variantId, attributeId])
+  @@index([variantId])
+  @@index([attributeId])
+}
+
+// =====================================
+// IMÁGENES
+// =====================================
+
+model ProductImage {
+  id          Int      @id @default(autoincrement())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantId   String?
+  variant     ProductVariant? @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  url         String   @db.VarChar(500)
+  altText     String?  @db.VarChar(255)
+  isFeatured  Boolean  @default(false)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([isFeatured])
+  @@index([sortOrder])
+}
+
+// =====================================
+// INVENTARIO
+// =====================================
+
+model Inventory {
+  id            String   @id @default(uuid())
+  variantId     String   @unique
+  variant       ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  quantity      Int      @default(0)
+  reservedQty   Int      @default(0) // Cantidad reservada en pedidos
+  reorderPoint  Int      @default(0)
+  reorderQty    Int      @default(0)
+  trackQuantity Boolean  @default(true)
+  allowBackorder Boolean @default(false)
+  lowStockThreshold Int? @default(0)
+  lastRestockedAt DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([variantId])
+  @@index([quantity])
+  @@index([trackQuantity])
+}
+
+// =====================================
+// CRM Y CLIENTES
+// =====================================
+
+model Customer {
+  id            String   @id @default(uuid())
+  email         String   @unique @db.VarChar(255)
+  firstName     String?  @db.VarChar(100)
+  lastName      String?  @db.VarChar(100)
+  company       String?  @db.VarChar(255)
+  phone         String?  @db.VarChar(50)
+  taxId         String?  @db.VarChar(100)
+  customerType  CustomerType @default(INDIVIDUAL)
+  status        CustomerStatus @default(ACTIVE)
+  totalSpent    Decimal  @db.Decimal(12, 2) @default(0)
+  ordersCount   Int      @default(0)
+  lastOrderDate DateTime?
+  birthday      DateTime?
+  gender        Gender?
+  marketingOptIn Boolean @default(false)
+  notes         String?  @db.Text
+  tags          Json?    // Array de tags
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relaciones
+  addresses     CustomerAddress[]
+  orders        Order[]
+  opportunities SalesOpportunity[]
+  chatSessions  ChatSession[]
+
+  @@index([email])
+  @@index([customerType])
+  @@index([status])
+  @@index([lastOrderDate])
+}
+
+enum CustomerType {
+  INDIVIDUAL
+  BUSINESS
+  WHOLESALE
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+model CustomerAddress {
+  id            Int      @id @default(autoincrement())
+  customerId    String
+  customer      Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type          AddressType @default(BOTH)
+  firstName     String?  @db.VarChar(100)
+  lastName      String?  @db.VarChar(100)
+  company       String?  @db.VarChar(255)
+  addressLine1  String   @db.VarChar(255)
+  addressLine2  String?  @db.VarChar(255)
+  city          String   @db.VarChar(100)
+  state         String?  @db.VarChar(100)
+  postalCode    String   @db.VarChar(20)
+  country       String   @db.VarChar(2) // ISO 3166-1 alpha-2
+  phone         String?  @db.VarChar(50)
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([customerId])
+  @@index([type])
+}
+
+enum AddressType {
+  BILLING
+  SHIPPING
+  BOTH
+}
+
+// =====================================
+// CRM - OPORTUNIDADES DE VENTA
+// =====================================
+
+model SalesOpportunity {
+  id                String   @id @default(uuid())
+  customerId        String?
+  customer          Customer? @relation(fields: [customerId], references: [id])
+  title             String   @db.VarChar(255)
+  description       String?  @db.Text
+  value             Decimal? @db.Decimal(12, 2)
+  currency          String   @db.VarChar(3) @default("USD")
+  stage             OpportunityStage @default(PROSPECT)
+  probability       Int      @default(0) // 0-100
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  assignedTo        String?  // ID del usuario admin asignado
+  source            OpportunitySource @default(WEBSITE)
+  productsInterest  Json?    // Array de product_ids
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([customerId])
+  @@index([stage])
+  @@index([assignedTo])
+  @@index([expectedCloseDate])
+}
+
+enum OpportunityStage {
+  PROSPECT
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum OpportunitySource {
+  WEBSITE
+  PHONE
+  EMAIL
+  SOCIAL
+  REFERRAL
+  EVENT
+}
+
+// =====================================
+// PEDIDOS
+// =====================================
+
+model Order {
+  id               String      @id @default(uuid())
+  orderNumber      String      @unique @db.VarChar(50)
+  customerId       String?
+  customer         Customer?   @relation(fields: [customerId], references: [id])
+  status           OrderStatus @default(PENDING)
+  paymentStatus    PaymentStatus @default(PENDING)
+  fulfillmentStatus FulfillmentStatus @default(UNFULFILLED)
+  
+  // Montos
+  subtotal         Decimal     @db.Decimal(12, 2)
+  taxAmount        Decimal     @db.Decimal(12, 2) @default(0)
+  shippingAmount   Decimal     @db.Decimal(12, 2) @default(0)
+  discountAmount   Decimal     @db.Decimal(12, 2) @default(0)
+  totalAmount      Decimal     @db.Decimal(12, 2)
+  currency         String      @db.VarChar(3) @default("USD")
+  
+  // Información de envío
+  shippingMethod   String?     @db.VarChar(100)
+  trackingNumber   String?     @db.VarChar(255)
+  shippedAt        DateTime?
+  deliveredAt      DateTime?
+  
+  // Direcciones
+  billingAddressId Int?
+  shippingAddressId Int?
+  
+  // Notas
+  customerNotes    String?     @db.Text
+  adminNotes       String?     @db.Text
+  
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  items            OrderItem[]
+
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([fulfillmentStatus])
+  @@index([createdAt])
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  PARTIALLY_PAID
+  REFUNDED
+  FAILED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIAL
+  FULFILLED
+}
+
+model OrderItem {
+  id            String   @id @default(uuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  variantId     String?
+  
+  // Configuración 3D del watch (snapshot)
+  watchConfig   Json?    // Almacena la configuración completa 3D
+  
+  // Detalles del item
+  name          String   @db.VarChar(255)
+  sku           String?  @db.VarChar(100)
+  quantity      Int
+  price         Decimal  @db.Decimal(10, 2) // Precio unitario
+  total         Decimal  @db.Decimal(10, 2) // Precio total
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([variantId])
+}
+
+// =====================================
+// CONFIGURACIÓN DE APIs
+// =====================================
+
+model ApiProvider {
+  id              Int      @id @default(autoincrement())
+  name            String   @unique @db.VarChar(100)
+  displayName     String   @db.VarChar(100)
+  baseUrl         String   @db.VarChar(500)
+  authenticationType ApiAuthType
+  isActive        Boolean  @default(true)
+  capabilities    Json?    // {'vision': true, 'streaming': true, 'max_context': 128000}
+  rateLimits      Json?    // {'requests_per_minute': 1000, 'tokens_per_hour': 1000000}
+  costPerToken    Decimal? @db.Decimal(10, 8)
+  documentationUrl String? @db.VarChar(500)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  models          AiModel[]
+  configs         ProjectApiConfig[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+enum ApiAuthType {
+  BEARER
+  API_KEY
+  OAUTH2
+  NONE
+}
+
+model ProjectApiConfig {
+  id                  String   @id @default(uuid())
+  projectName         String   @db.VarChar(100)
+  providerId          Int
+  provider            ApiProvider @relation(fields: [providerId], references: [id])
+  priority            Int      @default(1)
+  isEnabled           Boolean  @default(true)
+  configuration       Json     // API keys, endpoints, modelos específicos
+  rateLimitsOverride  Json?
+  costBudgetLimit     Decimal? @db.Decimal(10, 2)
+  healthStatus        ApiHealthStatus @default(UNKNOWN)
+  lastHealthCheck     DateTime?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([projectName])
+  @@index([providerId])
+  @@index([healthStatus])
+}
+
+enum ApiHealthStatus {
+  HEALTHY
+  DEGRADED
+  UNHEALTHY
+  UNKNOWN
+}
+
+model AiModel {
+  id              Int      @id @default(autoincrement())
+  providerId      Int
+  provider        ApiProvider @relation(fields: [providerId], references: [id])
+  name            String   @db.VarChar(100)
+  displayName     String   @db.VarChar(100)
+  description     String?  @db.Text
+  maxContextTokens Int?
+  costPerInputToken Decimal? @db.Decimal(10, 8)
+  costPerOutputToken Decimal? @db.Decimal(10, 8)
+  capabilities    Json?    // {'vision': true, 'function_calling': true}
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([providerId])
+  @@index([name])
+  @@index([isActive])
+}
+
+// =====================================
+// CHAT Y CONVERSACIONES
+// =====================================
+
+model ChatSession {
+  id          String   @id @default(uuid())
+  sessionId   String   @unique @db.VarChar(255)
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  userType    ChatUserType
+  status      ChatSessionStatus @default(ACTIVE)
+  startedAt   DateTime @default(now())
+  endedAt     DateTime?
+  metadata    Json?    // Información adicional de la sesión
+
+  messages    ChatMessage[]
+
+  @@index([customerId])
+  @@index([userType])
+  @@index([status])
+  @@index([startedAt])
+}
+
+enum ChatUserType {
+  CUSTOMER
+  ADMIN
+}
+
+enum ChatSessionStatus {
+  ACTIVE
+  ENDED
+  ABANDONED
+}
+
+model ChatMessage {
+  id            String   @id @default(uuid())
+  sessionId     String
+  session       ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  role          ChatMessageRole
+  content       String   @db.Text
+  provider      String?  // Proveedor de IA usado
+  model         String?  // Modelo de IA usado
+  tokensUsed    Int?
+  cost          Decimal? @db.Decimal(10, 6)
+  responseTimeMs Int?
+  createdAt     DateTime @default(now())
+
+  @@index([sessionId])
+  @@index([role])
+  @@index([createdAt])
+}
+
+enum ChatMessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+// =====================================
+// CONFIGURACIONES DE AGENTES
+// =====================================
+
+model AgentConfiguration {
+  id              String   @id @default(uuid())
+  name            String   @db.VarChar(100)
+  agentType       String   @db.VarChar(100) // 'product_recommender', 'customer_support', etc.
+  systemPrompt    String?  @db.Text
+  configuration   Json     // Parámetros específicos del agente
+  isActive        Boolean  @default(true)
+  version         Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([agentType])
+  @@index([isActive])
+  @@index([version])
+}
+
+// =====================================
+// LOGS Y AUDITORÍA
+// =====================================
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  // ID del usuario que realizó la acción
+  action      String   @db.VarChar(100)
+  entity      String   @db.VarChar(100) // Nombre de la entidad afectada
+  entityId    String?  // ID de la entidad afectada
+  oldData     Json?    // Datos anteriores
+  newData     Json?    // Datos nuevos
+  ipAddress   String?  @db.VarChar(45)
+  userAgent   String?  @db.VarChar(500)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
